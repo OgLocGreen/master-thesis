@@ -1,0 +1,4 @@
+*.vscode
+
+./info/env/*
+./info/env/
