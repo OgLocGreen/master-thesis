@@ -1,0 +1,41 @@
+STEP translation to Solid Edge
+Date: Montag,März 20,2023 12:35
+Source File: C:\Users\chri5\Desktop\gijon\master-thesis\mecanica\cad\version4\sensor\IN73_RM.stp
+Author: Yvonne.Storm
+Organization: Unknown
+Source System: CREO PARAMETRIC BY PTC INC, 2018190
+
+Hardware:
+Processor: Intel(R) Core(TM) i7-4720HQ CPU @ 2.60GHz
+Operating System: Windows 10 Version:21H2 Build:19044 System Type:64-bit
+Installed Memory: 15.91 GB
+
+Software Information
+Parasolid Version: 35.0.149
+PSBodyShop Version: 35.0.82
+Step Adapter Version: 11.0.82
+Solid Edge Version: 223.00.00.101 x64
+
+Step Import Options
+Import Faceted Bodies: On
+Import Check Bodies: Off
+Import Curves: On
+Import DoNotSave: On
+Import Multiple Bodies As Single Part File: On
+Import Stitch Surfaces: On
+Import Boolean Solids: On
+Make Base Feature: On
+Simplify Geometry: On
+Import Imprint Curves: On
+Import Drive: C:
+Import Stitch Surfaces: On
+Import Surfaces: On
+Import Output Path: C:\Users\chri5\Desktop\gijon\master-thesis\mecanica\cad\version4\sensor
+Import Enable Default Output Path: On
+Import PMI: Off
+Import As Internal Components: Off
+Import Path: 
+
+Translating to Parasolid data types...
+Translation process completed
+Total time required to translate and post process:00 : 00 : 53
