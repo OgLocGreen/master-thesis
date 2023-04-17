@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="a_prueba">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.a_prueba_sm" class="a_pruebaSM" />
+	<tagstring>irobot, inspection, reparation, june19</tagstring>
+	<author>sara</author>
+	<date>Tue Jan 07 2020</date>
+	<description>
+		description
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

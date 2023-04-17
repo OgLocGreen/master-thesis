@@ -1,0 +1,15 @@
+#goal definition
+float32 vel
+int32 n_pasadas_ant
+int32 n_imgs_ant
+
+---
+#result definition
+bool finished
+int32 n_pasadas_act
+int32 n_imgs_act
+
+---
+#feedback
+int32[] sequence
+

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="irobot_inspeccion_reparacion_2021">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.irobot_inspeccion_reparacion_2021_sm" class="irobot_inspeccion_reparacion_2021SM" />
+	<tagstring>irobot, inspection, reparation, june19</tagstring>
+	<author>Sara Roos</author>
+	<date>Mon Feb 08 2021</date>
+	<description>
+		Lleva a cabo la inspeccion y reparación de una chapa de dimensiones conocidas.
+	</description>
+
+
+	<!-- Contained Behaviors -->
+	<contains name="Inspection_sheet" />
+	<contains name="IROBOT_eng_inspection_and_reparation_StateMachine_Sept19" />
+
+	<!-- Available Parameters -->
+
+</behavior>

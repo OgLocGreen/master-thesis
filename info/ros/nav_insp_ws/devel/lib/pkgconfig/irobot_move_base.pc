@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: irobot_move_base
+Description: Description of irobot_move_base
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

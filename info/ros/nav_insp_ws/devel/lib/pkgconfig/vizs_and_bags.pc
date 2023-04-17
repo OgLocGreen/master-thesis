@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: vizs_and_bags
+Description: Description of vizs_and_bags
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

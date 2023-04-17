@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+  <param name="robot_description" command="$(find xacro)/xacro --inorder
+  											'$(find cob_hardware_config)/robots/raw3-5/urdf/raw3-5.urdf.xacro'" />  
+</launch>

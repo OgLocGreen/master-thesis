@@ -1,0 +1,16 @@
+#goal definition
+float32 vel
+float32 width_sheet
+float32 long_sheet
+float32 width_robot
+float32 long_robot
+float32 step
+
+---
+#result definition
+bool finished
+int32 n_pasadas_totales
+---
+#feedback
+int32[] sequence
+

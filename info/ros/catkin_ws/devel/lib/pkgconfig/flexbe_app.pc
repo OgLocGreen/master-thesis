@@ -1,0 +1,8 @@
+prefix=/home/irobot/catkin_ws/devel
+
+Name: flexbe_app
+Description: Description of flexbe_app
+Version: 2.2.1
+Cflags: -I/home/irobot/catkin_ws/src/flexbe_app/src
+Libs: -L${prefix}/lib -lflexbe_app
+Requires: 

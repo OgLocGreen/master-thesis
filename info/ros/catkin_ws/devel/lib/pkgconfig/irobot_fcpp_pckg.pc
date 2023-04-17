@@ -1,0 +1,8 @@
+prefix=/home/irobot/catkin_ws/devel
+
+Name: irobot_fcpp_pckg
+Description: Description of irobot_fcpp_pckg
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,8 @@
+prefix=/home/irobot/catkin_ws/devel
+
+Name: flexbe_widget
+Description: Description of flexbe_widget
+Version: 1.2.2
+Cflags: -I/home/irobot/catkin_ws/src/flexbe_behavior_engine/flexbe_widget/src
+Libs: -L${prefix}/lib -lflexbe_widget
+Requires: 

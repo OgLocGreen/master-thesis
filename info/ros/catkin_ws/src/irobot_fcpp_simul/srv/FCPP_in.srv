@@ -1,0 +1,38 @@
+int32 id_input
+bool get_working_zones
+bool get_inspection_zones
+bool get_rot_zone
+---
+#Numero total de defectos
+int32 n_defects
+
+#Caracteristicas robot
+float32 herr_lat
+float32 herr_proa
+float32 herr_popa
+
+#Caracteristicas robot 2
+float32 long_robotx
+float32 long_roboty
+float32 tras_herrx
+float32 tras_herry
+
+#Coordenadas chapa
+float32 xmin_chapa
+float32 xmax_chapa
+float32 ymin_chapa
+float32 ymax_chapa
+
+#Forma del defecto
+geometry_msgs/Polygon poly_i
+
+#Zonas de trabajo
+geometry_msgs/Polygon zone0
+geometry_msgs/Polygon zone90
+geometry_msgs/Polygon zone180
+geometry_msgs/Polygon zone270
+
+
+#Zona de rotacion
+geometry_msgs/Polygon zone_rot
+

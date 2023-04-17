@@ -1,0 +1,8 @@
+prefix=/home/irobot/catkin_ws/devel
+
+Name: irobot_repo_flexbe_behaviors
+Description: Description of irobot_repo_flexbe_behaviors
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib -lirobot_repo_flexbe_behaviors
+Requires: 

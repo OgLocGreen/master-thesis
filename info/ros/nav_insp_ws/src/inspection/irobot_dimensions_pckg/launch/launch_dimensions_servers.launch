@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+
+<launch>
+	<node pkg="irobot_dimensions_pckg" type="findCorners_actionserver" name="findcorners" output="screen"/>
+	<node pkg="irobot_dimensions_pckg" type="obtainDimension_actionserver" name="obtaindimension" output="screen"/>
+
+<!--
+	<node pkg="rviz" type="rviz" name="rviz_dimensions" args="-d $(find irobot_dimensions_pckg)/launch/get_dimensions.rviz" output="screen" launch-prefix="xterm -e"/>
+-->
+</launch>

@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+
+<launch>
+	<node pkg="irobot_dimensions_pckg" type="findCorners_actionserver" name="findcorners"/>
+	<node pkg="irobot_dimensions_pckg" type="obtainDimension_actionserver" name="obtaindimension"/>
+</launch>

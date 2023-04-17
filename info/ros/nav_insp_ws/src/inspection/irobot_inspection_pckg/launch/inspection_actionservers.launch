@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+
+<launch>
+	<node pkg="action_server_package" type="baserotation_server" name="baserotation_server"/>
+	<!--<node pkg="action_server_package" type="moverobotcoord_server" name="moverobotcoord_server"/>-->
+	<node pkg="action_server_package" type="completerectanglecoverage_server" name="completerectanglecoverage_server"/>
+	<node pkg="action_server_package" type="chapastorage_server" name="chapastorage_server"/>
+
+	<node pkg="irobot_fcpp_simul" type="computedefectdecomposition_actionserver" name="computedefectdecomposition_actionserver"/>	
+	<node pkg="irobot_fcpp_simul" type="executepath_actionserver" name="executepath_actionserver"/>	
+	<!--<node pkg="irobot_fcpp_simul" type="main_ir_storage_service" name="main_ir_storage_service"/>-->
+
+</launch>

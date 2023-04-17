@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="reparation_sheet">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.reparation_sheet_sm" class="reparation_sheetSM" />
+	<tagstring></tagstring>
+	<author>Sara Roos</author>
+	<date>Fri Dec 11 2020</date>
+	<description>
+		Reparación defectos
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

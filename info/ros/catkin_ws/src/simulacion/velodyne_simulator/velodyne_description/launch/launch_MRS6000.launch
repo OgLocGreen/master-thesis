@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+	<launch>
+	<!-- Spawn the example robot -->
+	  <param name="velodyne_description" command="$(find xacro)/xacro --inorder '$(find velodyne_description)/urdf/example_mrs6000.urdf.xacro'" />
+	  <node pkg="gazebo_ros" type="spawn_model" name="spawn_model" args="-urdf -param /velodyne_description -model velodyne_robot"/>
+	  <!--<node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+	    <param name="publish_frequency" type="double" value="30.0" />
+	  </node>-->
+	</launch>

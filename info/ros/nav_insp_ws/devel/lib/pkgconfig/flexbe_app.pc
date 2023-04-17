@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: flexbe_app
+Description: Description of flexbe_app
+Version: 2.2.1
+Cflags: -I/home/irobot/nav_insp_ws/src/flexbe/flexbe_app/src
+Libs: -L${prefix}/lib -lflexbe_app
+Requires: 

@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- define arguments cob -->
+  <arg name="robot" default="raw3-5"/>
+  <arg name="robot_env" default="empty"/>
+
+  <!--MUNDO GAZEBO-->
+  <arg name="world" default="aruco"/>
+
+
+  <!--POSC ROBOT-->
+  <arg name="init_pos_x" default="6.0"/>
+  <arg name="init_pos_y" default="4.0"/>
+  <arg name="init_pos_z" default="0.15"/>
+
+      
+  <!--<arg name="world_name" default="worlds/empty.world"/>-->
+
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+
+
+  <!-- LAUNCH WORLD-->
+  <include file="$(find spawn_package)/launch/launch_worlds/$(arg world).launch" />
+
+  
+  <!-- SPAWN ROBOT -->
+  <!-- upload default configuration parameters -->
+  <include file="$(find mpo700_mod)/robots/$(arg robot).xml" >
+    <arg name="sim" value="true" />
+  </include>
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model" 
+       args="-urdf
+            -param robot_description
+            -model robot
+            -x $(arg init_pos_x)
+            -y $(arg init_pos_y)
+            -z $(arg init_pos_z)
+            "
+      respawn="false" output="screen" />
+
+
+  <node pkg="gazebo_ros" type="gzclient" name="gzclient" />
+
+</launch>

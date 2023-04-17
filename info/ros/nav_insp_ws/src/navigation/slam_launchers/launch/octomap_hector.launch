@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+	
+	<node pkg="aux_controllers" type="main_coupledhokuyo" name="coupledHokuyo"/>
+	<node pkg="aux_controllers" type="main_coupledvelodyne" name="coupledVelodyne"/>
+
+
+	<include file="$(find slam_launchers)/launch/mapping_hector.launch" />
+	<include file="$(find slam_launchers)/launch/octomap.launch" />
+
+</launch>

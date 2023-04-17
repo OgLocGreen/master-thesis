@@ -1,0 +1,11 @@
+# Define the goal
+geometry_msgs/PoseArray[] path
+
+
+---
+# Define the result
+bool recorrido
+
+---
+# Define a feedback message
+bool recorrido

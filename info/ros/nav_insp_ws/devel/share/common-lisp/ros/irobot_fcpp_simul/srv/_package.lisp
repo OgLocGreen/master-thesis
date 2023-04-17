@@ -1,0 +1,20 @@
+(cl:defpackage irobot_fcpp_simul-srv
+  (:use )
+  (:export
+   "FCPP_IN"
+   "<FCPP_IN-REQUEST>"
+   "FCPP_IN-REQUEST"
+   "<FCPP_IN-RESPONSE>"
+   "FCPP_IN-RESPONSE"
+   "FCPP_OUT"
+   "<FCPP_OUT-REQUEST>"
+   "FCPP_OUT-REQUEST"
+   "<FCPP_OUT-RESPONSE>"
+   "FCPP_OUT-RESPONSE"
+   "IROBOT_IR_DATA"
+   "<IROBOT_IR_DATA-REQUEST>"
+   "IROBOT_IR_DATA-REQUEST"
+   "<IROBOT_IR_DATA-RESPONSE>"
+   "IROBOT_IR_DATA-RESPONSE"
+  ))
+

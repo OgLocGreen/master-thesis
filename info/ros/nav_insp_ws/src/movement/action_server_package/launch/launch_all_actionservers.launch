@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+
+<launch>
+	<node pkg="action_server_package" type="baserotation_server" name="baserotation_actionserver"/>
+	<node pkg="action_server_package" type="moverobotcoord_server" name="moverobotcoord_actionserver"/>
+	<node pkg="irobot_fcpp_simul" type="executepath_actionserver" name="executepath_actionserver"/>
+	<node pkg="irobot_fcpp_simul" type="main_ir_storage_service" name="main_ir_storage_service"/>	
+	<node pkg="irobot_inspection_pckg" type="getpolygon_actionserver" name="getpolygon_actionserver"/>
+	<node pkg="irobot_fcpp_simul" type="computedefectdecomposition_actionserver" name="computedefectdecomposition_actionserver"/>
+
+	<!--<node pkg="action_server_package" type="chapastorage_server" name="chapastorage_serviceserver"/>-->
+	<!--<node pkg="action_server_package" type="completerectanglecoverage_server" name="completerectanglecoverage_actionserver"/>-->
+</launch>
+
+
+
+<!--
+
+<launch>
+	<node pkg="action_server_package" type="baserotation_server" name="baserotation_actionserver"/>
+	<node pkg="action_server_package" type="moverobotcoord_server" name="moverobotcoord_actionserver"/>
+	<node pkg="action_server_package" type="completerectanglecoverage_server" name="completerectanglecoverage_actionserver"/>
+	<node pkg="action_server_package" type="XXXXXX_server" name="XXXXXX_actionserver"/>
+	<node pkg="action_server_package" type="inspectionframe_server" name="inspectionframe_serviceserver"/>
+	<node pkg="action_server_package" type="chapastorage_server" name="chapastorage_serviceserver"/>
+</launch>
+-->
+
+

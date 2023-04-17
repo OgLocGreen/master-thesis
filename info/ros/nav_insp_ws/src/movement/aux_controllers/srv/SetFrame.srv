@@ -1,0 +1,12 @@
+bool ini
+
+float32 origin_x
+float32 origin_y
+float32 origin_z
+
+float32 rotation_roll
+float32 rotation_pitch
+float32 rotation_yaw
+
+---
+bool respond

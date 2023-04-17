@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: mpo700_mod
+Description: Description of mpo700_mod
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

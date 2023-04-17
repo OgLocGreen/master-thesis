@@ -1,0 +1,10 @@
+#goal definition
+float32 vel
+float32 step
+---
+#result definition
+bool finished
+---
+#feedback
+int32[] sequence
+

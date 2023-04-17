@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: slam_launchers
+Description: Description of slam_launchers
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

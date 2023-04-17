@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+<param name="file_direction" textfile="$(find spawn_package)/models/plastic_cup/model.sdf"/>
+<node name="spawn_gazebo_fakecamera_model" pkg="gazebo_ros" type="spawn_model"
+	  args="-sdf -param file_direction -model false_realsense  -x 10.0 -y 0.0 -z 20.0 " respawn="false" output="screen"/>
+</launch>

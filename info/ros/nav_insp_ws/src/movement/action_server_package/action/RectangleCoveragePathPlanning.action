@@ -1,0 +1,13 @@
+# Define the goal
+float32 long_rectangle
+float32 width_rectangle
+float32 step
+float32 dist_lr
+float32 width_laser
+
+---
+# Define the result
+geometry_msgs/PoseArray path
+---
+# Define a feedback message
+geometry_msgs/PoseStamped base_position

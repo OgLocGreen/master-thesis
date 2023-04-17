@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: flexbe_states
+Description: Description of flexbe_states
+Version: 1.2.2
+Cflags: -I/home/irobot/nav_insp_ws/src/flexbe/flexbe_behavior_engine/flexbe_states/src
+Libs: -L${prefix}/lib -lflexbe_states
+Requires: 

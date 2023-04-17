@@ -1,0 +1,10 @@
+#goal definition
+std_msgs/String path
+float64 sheet_size_x
+float64 sheet_size_y
+---
+#result definition
+irobot_inspection_pckg/polygonArray poly_array
+---
+#feedback
+#int32[] sequence

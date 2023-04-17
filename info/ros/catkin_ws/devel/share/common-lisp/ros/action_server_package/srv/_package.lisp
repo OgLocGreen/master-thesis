@@ -1,0 +1,15 @@
+(cl:defpackage action_server_package-srv
+  (:use )
+  (:export
+   "CHAPASTORAGE"
+   "<CHAPASTORAGE-REQUEST>"
+   "CHAPASTORAGE-REQUEST"
+   "<CHAPASTORAGE-RESPONSE>"
+   "CHAPASTORAGE-RESPONSE"
+   "FCPP_IN"
+   "<FCPP_IN-REQUEST>"
+   "FCPP_IN-REQUEST"
+   "<FCPP_IN-RESPONSE>"
+   "FCPP_IN-RESPONSE"
+  ))
+

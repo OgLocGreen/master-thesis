@@ -1,0 +1,120 @@
+bool load_inputdata
+bool load_polygon
+
+bool get_input_data
+bool get_working_zonesh
+bool get_working_zonesc
+bool get_inspection_zones
+bool get_rot_zone
+
+#Booleanos inspeccion
+bool compute_adquireimgs
+bool compute_panorama
+bool merge_panoramas
+bool compute_detectpolys
+
+bool compute_fcpp_defect_i
+bool compute_fcpp_zone_i
+bool compute_fcpp_inspection_zone_i
+
+bool execute_fcpp_defect_i
+bool execute_fcpp_zone_i
+
+bool change_defect_reparation_goal
+bool change_inspection_goal
+
+
+bool get_poly_i
+bool get_defect_i
+bool get_defect_path
+
+bool get_inspection_i
+bool get_inspection_path
+
+bool activate_vizs
+
+#Caracteristicas robot
+float32 long_robotx
+float32 long_roboty
+
+#Caracteristicas herramienta
+float32 long_herrx
+float32 long_herry
+float32 tras_herrx
+float32 tras_herry
+
+#Caracteristicas camara
+float32 long_camx
+float32 long_camy
+float32 tras_camx
+float32 tras_camy
+
+#Coordenadas chapa
+float32 long_areax
+float32 long_areay
+
+#Poligono para pasar como entrada
+geometry_msgs/Polygon input_poly
+
+#ID poligono
+int32 id_poly
+
+#ID defecto
+int32 id_defecto
+
+#ID zona
+int32 id_zona
+
+
+---
+
+#Caracteristicas robot·············
+float32 long_robotx
+float32 long_roboty
+
+#Caracteristicas herramienta
+float32 long_herrx
+float32 long_herry
+float32 tras_herrx
+float32 tras_herry
+
+#Caracteristicas camara
+float32 long_camx
+float32 long_camy
+float32 tras_camx
+float32 tras_camy
+
+#Coordenadas chapa
+float32 long_areax
+float32 long_areay
+
+#Zonas de trabajo herr·············
+geometry_msgs/Polygon zoneh0
+geometry_msgs/Polygon zoneh90
+geometry_msgs/Polygon zoneh180
+geometry_msgs/Polygon zoneh270
+
+#Zonas de trabajo cam·············
+geometry_msgs/Polygon zonec0
+geometry_msgs/Polygon zonec90
+geometry_msgs/Polygon zonec180
+geometry_msgs/Polygon zonec270
+
+#Paths de trabajo
+geometry_msgs/PoseArray[] path_tray0
+geometry_msgs/PoseArray[] path_tray90
+geometry_msgs/PoseArray[] path_tray180
+geometry_msgs/PoseArray[] path_tray270
+
+
+#Zona de rotacion·············
+geometry_msgs/Polygon zone_rot
+
+#Estructura defectos·············
+defecto defecto_i
+geometry_msgs/Polygon poly_i
+int32 n_defectos
+
+geometry_msgs/PoseArray[] defect_i_paths
+geometry_msgs/PoseArray[] inspection_i_paths
+

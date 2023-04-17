@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+
+<launch>
+	<node pkg="irobot_inspection_pckg" type="getimages_actionserver" name="getimages_actionserver"/>
+	<node pkg="irobot_inspection_pckg" type="getpartialpanorama_actionserver" name="getpanorama_actionserver"/>
+	<node pkg="irobot_inspection_pckg" type="getpolygon_actionserver" name="getpolygon_actionserver"/>
+</launch>

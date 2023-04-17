@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: irobot_sm_flexbe_behaviors
+Description: Description of irobot_sm_flexbe_behaviors
+Version: 1.0.0
+Cflags: 
+Libs: -L${prefix}/lib -lirobot_sm_flexbe_behaviors
+Requires: 

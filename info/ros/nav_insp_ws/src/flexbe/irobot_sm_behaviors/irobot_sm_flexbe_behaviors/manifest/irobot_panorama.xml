@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="IROBOT_panorama">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.irobot_panorama_sm" class="IROBOT_panoramaSM" />
+	<tagstring></tagstring>
+	<author>Sara Roos</author>
+	<date>Mon Dec 02 2019</date>
+	<description>
+		Get images and make panorama
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

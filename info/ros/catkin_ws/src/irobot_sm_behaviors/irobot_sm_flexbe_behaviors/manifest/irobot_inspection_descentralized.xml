@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="irobot_inspection_descentralized">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.irobot_inspection_descentralized_sm" class="irobot_inspection_descentralizedSM" />
+	<tagstring></tagstring>
+	<author>Sara Roos</author>
+	<date>Wed Dec 04 2019</date>
+	<description>
+		Coordinar inspección y reparación. Pero descentralizado
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

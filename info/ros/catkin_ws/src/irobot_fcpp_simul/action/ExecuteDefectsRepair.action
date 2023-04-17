@@ -1,0 +1,10 @@
+# Define the goal
+#int32 chapa_id
+int32 defecto_id
+---
+# Define the result
+bool reparado
+geometry_msgs/Point[] path
+
+---
+# Define a feedback message

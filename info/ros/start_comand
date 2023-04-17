@@ -1,0 +1,16 @@
+---------GAZEBO SIMULATION----------------
+source catkin_ws/devel/setup.bash
+roslaunch summit_xl_sim_bringup summit_xl_realsense.launch 
+
+---------FLEXBE----------------
+source nav_insp_ws/devel/setup.bash
+roslaunch flexbe_app flexbe_full.launch 
+Load behaviour -> SIMUL_inspection_sheet
+
+--------LANZA TODO SALVO LA SIMULACIÓN----
+sh irobot.sh
+
+//Vale, ahora buscar un panorama completo y empezar desde ahí!!!
+//Para poder pasarle directamente las esquinas del polígono!
+
+

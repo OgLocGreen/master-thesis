@@ -1,0 +1,5 @@
+<launch>
+
+<param name="summit_xl_a/robot_description" command="$(find xacro)/xacro --inorder              '$(find summit_xl_description)/robots/summit_xl.urdf.xacro'"/>
+
+</launch>

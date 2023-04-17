@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+    <include file="$(find spawn_package)/launch/launch_coupledfalsecamera.launch"/>
+
+	<node pkg="aux_controllers" type="main_coupledcameratool" name="couples_rs_node" />
+
+
+
+</launch>

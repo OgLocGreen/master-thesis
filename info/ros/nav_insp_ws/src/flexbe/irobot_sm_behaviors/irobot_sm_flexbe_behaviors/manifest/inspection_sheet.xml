@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="Inspection_sheet">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.inspection_sheet_sm" class="Inspection_sheetSM" />
+	<tagstring></tagstring>
+	<author>Sara</author>
+	<date>Thu Dec 03 2020</date>
+	<description>
+		Inspecciona la chapa según la información de las realsense centrales
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

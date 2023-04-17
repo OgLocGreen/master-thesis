@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="IROBOT_inspection_and_reparation_StateMachine_Jun19">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.irobot_inspection_and_reparation_statemachine_jun19_sm" class="IROBOT_inspection_and_reparation_StateMachine_Jun19SM" />
+	<tagstring>irobot, inspection, reparation, june19</tagstring>
+	<author>Alvaro</author>
+	<date>Thu Jun 13 2019</date>
+	<description>
+		Maquina de estados que coordina los movimientos de un robot Summit Xl para la inspeccion completa de la superficie de una chapa de acero y la detección y reparación de defectos marcados en la misma.
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+	<params>
+
+		<param type="numeric" name="defecto_a_reparar" default="0" label="defecto_a_reparar" hint="Sets the defecto_a_reparar">
+			<min value="0" />
+			<max value="10" />
+		</param>
+
+	</params>
+
+
+</behavior>

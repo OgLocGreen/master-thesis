@@ -1,0 +1,11 @@
+#goal definition
+float32 vel
+int32 mode
+---
+#result definition
+bool finished
+bool newScanIsNeeded
+---
+#feedback
+int32[] sequence
+

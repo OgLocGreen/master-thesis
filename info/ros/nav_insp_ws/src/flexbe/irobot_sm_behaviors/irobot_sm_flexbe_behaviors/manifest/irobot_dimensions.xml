@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<behavior name="IROBOT_dimensions">
+
+	<executable package_path="irobot_sm_flexbe_behaviors.irobot_dimensions_sm" class="IROBOT_dimensionsSM" />
+	<tagstring></tagstring>
+	<author>Sara Roos</author>
+	<date>Mon Nov 11 2019</date>
+	<description>
+		Get dimensions of the sheet
+	</description>
+
+
+	<!-- Contained Behaviors -->
+
+	<!-- Available Parameters -->
+
+</behavior>

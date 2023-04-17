@@ -1,0 +1,8 @@
+prefix=/home/irobot/nav_insp_ws/devel
+
+Name: gazebo_sim_movement
+Description: Description of gazebo_sim_movement
+Version: 0.1.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
