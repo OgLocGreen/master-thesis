@@ -1,0 +1,53 @@
+---------Installation---------------------
+sudo apt-cache search package
+sudo apt install ros-kinetic-package
+
+
+// Packages that are needed for irobot-ros
+sudo apt install ros-kinetic-jsk-move-base
+sudo apt install ros-kinetic-jsk-recoginition-msgs
+sudo apt install ros-kinetic-robot-localization
+sudo apt install ros-kinetic-mavros-msgs
+sudo apt install ros-kinetic-gmapping
+sudo apt install ros-kinetic-map-server
+sudo apt install ros-kinetic-amcl
+sudo apt install ros-kinetic-costmap-prohibition-layer
+sudo apt install ros-kinetic-teb-local-planner
+sudo apt install ros-kinetic-joint-state-controller
+sudo apt install ros-kinetic-velocity-controllers
+
+
+sudo apt install ros-humble-jsk-move-base ros-humble-jsk-recoginition-msgs ros-humble-robot-localization
+ ros-humble-velocity-controllers ros-humble-mavros-msgs ros-humble-gmapping ros-humble-map-server ros-humble-amcl
+    ros-humble-costmap-prohibition-layer ros-humble-teb-local-planner ros-humble-joint-state-controller
+
+
+// To get permision to all files
+// this is not good but it make it work
+sudo chmod -R 777
+
+// then do catkin_make in both dir
+
+cd catkin_ws 
+catkin_make
+
+cd ..
+cd nav_insp_ws
+catkin_make
+
+---------GAZEBO SIMULATION----------------
+source catkin_ws/devel/setup.bash
+roslaunch summit_xl_sim_bringup summit_xl_realsense.launch 
+
+---------FLEXBE----------------
+source nav_insp_ws/devel/setup.bash
+roslaunch flexbe_app flexbe_full.launch 
+Load behaviour -> SIMUL_inspection_sheet
+
+--------LANZA TODO SALVO LA SIMULACIÓN----
+sh irobot.sh
+
+//Vale, ahora buscar un panorama completo y empezar desde ahí!!!
+//Para poder pasarle directamente las esquinas del polígono!
+
+

@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: flexbe_core
-Description: Description of flexbe_core
-Version: 1.2.2
-Cflags: -I/home/irobot/nav_insp_ws/src/flexbe/flexbe_behavior_engine/flexbe_core/src
-Libs: -L${prefix}/lib -lflexbe_core
-Requires: 

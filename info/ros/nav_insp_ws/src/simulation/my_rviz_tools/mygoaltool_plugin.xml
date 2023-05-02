@@ -1,9 +1,0 @@
-<library path="libmy_rviz_tools">
-  <class name="my_rviz_tools/MyGoal"
-         type="my_rviz_tools::MyGoalTool"
-         base_class_type="rviz::Tool">
-    <description>
-      My tool for setting a 2D Nav Goal in rviz.
-    </description>
-  </class>
-</library>

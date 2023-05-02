@@ -1,5 +1,0 @@
-<launch>
-  <param name="robot_description" command="cat $(find mypackage)/pr2_urdf.xml" />
-  <node pkg="rosbag" type="play" name="rosbagplay"
-    args="--clock -q -r 1.0 $(find mypackage)/tmp.bag" />
-</launch>

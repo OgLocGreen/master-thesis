@@ -1,8 +1,0 @@
-# Define the goal
-float32 number_of_degrees
----
-# Define the result
-float32 final_yaw
----
-# Define a feedback message
-float32 degrees_rotated

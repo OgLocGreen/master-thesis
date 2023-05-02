@@ -107,8 +107,6 @@ cv2.imshow("Image with Hull", image_with_hull)
 cv2.waitKey(0)
 cv2.destroyAllWindows()
 
-
-
 # Save the result image
 cv2.imwrite("closed_contours.png", mask)
 cv2.imwrite("hull_only.png", mask_only_hull)

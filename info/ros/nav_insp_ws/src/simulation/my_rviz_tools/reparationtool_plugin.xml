@@ -1,9 +1,0 @@
-<library path="libmy_rviz_tools">
-  <class name="my_rviz_tools/Reparation"
-         type="my_rviz_tools::ReparationTool"
-         base_class_type="rviz::Tool">
-    <description>
-      My tool for setting a 2D defect position in rviz.
-    </description>
-  </class>
-</library>

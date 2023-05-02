@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: flexbe_onboard
-Description: Description of flexbe_onboard
-Version: 1.2.2
-Cflags: -I/home/irobot/nav_insp_ws/src/flexbe/flexbe_behavior_engine/flexbe_onboard/src
-Libs: -L${prefix}/lib -lflexbe_onboard
-Requires: 

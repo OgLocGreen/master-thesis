@@ -1,8 +1,0 @@
-prefix=/home/irobot/catkin_ws/devel
-
-Name: flexbe_input
-Description: Description of flexbe_input
-Version: 1.2.2
-Cflags: -I/home/irobot/catkin_ws/src/flexbe_behavior_engine/flexbe_input/src
-Libs: -L${prefix}/lib 
-Requires: 

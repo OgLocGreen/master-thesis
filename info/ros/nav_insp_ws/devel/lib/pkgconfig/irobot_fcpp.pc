@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: irobot_fcpp
-Description: Description of irobot_fcpp
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

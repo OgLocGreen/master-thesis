@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-<param name="file_direction" textfile="$(find spawn_package)/models/monkey_wrench/model.sdf"/>
-<node name="spawn_gazebo_tool_model" pkg="gazebo_ros" type="spawn_model"
-	  args="-sdf -param file_direction -model monkey_wrench_tool  -x 20.0 -y 0.0 -z 20.0 " respawn="false" output="screen"/>
-</launch>

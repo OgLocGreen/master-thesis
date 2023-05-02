@@ -1,8 +1,0 @@
-prefix=/home/irobot/catkin_ws/devel
-
-Name: velodyne_description
-Description: Description of velodyne_description
-Version: 1.0.8
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

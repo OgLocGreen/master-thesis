@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-<param name="file_direction" textfile="$(find spawn_package)/models/RPLIDAR_A2M8/model.sdf"/>
-<node name="spawn_gazebo_laser_model" pkg="gazebo_ros" type="spawn_model"
-	  args="-sdf -param file_direction -model hokuyo_mod_slam  -x 1.0 -y 0.0 -z 0.0 " respawn="false" output="screen"/>
-</launch>

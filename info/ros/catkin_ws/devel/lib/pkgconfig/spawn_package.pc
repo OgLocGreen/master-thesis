@@ -1,8 +1,0 @@
-prefix=/home/irobot/catkin_ws/devel
-
-Name: spawn_package
-Description: Description of spawn_package
-Version: 0.0.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: 

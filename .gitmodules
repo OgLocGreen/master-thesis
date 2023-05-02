@@ -1,0 +1,2 @@
+[submodule "info/ros/catkin_ws/src/flexbe_app"]
+	url = https://github.com/FlexBE/flexbe_app

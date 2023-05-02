@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-	<node pkg="action_server_package" type="chapastorage_server" name="chapastorage_serviceserver"/>
-	<node pkg="aux_controllers" type="draw_chapas_aux.py" name="auxiliar_draw_chapas" output="screen"/>
-</launch>

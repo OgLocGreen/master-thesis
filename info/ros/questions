@@ -1,4 +1,0 @@
-Questions for ros
-1. Why we have two workspaces? Catkin and nav_insp_ws? -> because one person did one workspace and aotherone did the other work space
-2. Inspect only scan the holeplate and then give the Cordinates to the catkin?
-

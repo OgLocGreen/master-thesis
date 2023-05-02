@@ -1,8 +1,11 @@
 *.vscode
 
-./info/env/*
-./info/env/
+info/env/*
+info/ros/*
 info/source/env/
 
 dokus/espanol/Codigo/
 dokus/books/
+
+master-thesis.code-workspace
+info/ros/

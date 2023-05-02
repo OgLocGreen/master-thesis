@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: movement_summit
-Description: Description of movement_summit
-Version: 0.1.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: geometry_msgs roscpp

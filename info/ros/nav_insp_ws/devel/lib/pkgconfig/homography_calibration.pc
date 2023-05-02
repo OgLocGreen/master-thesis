@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: homography_calibration
-Description: Description of homography_calibration
-Version: 0.1.0
-Cflags: 
-Libs: -L${prefix}/lib 
-Requires: actionlib_msgs message_runtime geometry_msgs roscpp std_msgs

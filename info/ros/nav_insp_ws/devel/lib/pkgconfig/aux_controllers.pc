@@ -1,8 +1,0 @@
-prefix=/home/irobot/nav_insp_ws/devel
-
-Name: aux_controllers
-Description: Description of aux_controllers
-Version: 0.0.0
-Cflags: -I/home/irobot/nav_insp_ws/devel/include
-Libs: -L${prefix}/lib 
-Requires: 
