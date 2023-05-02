@@ -1,13 +1,12 @@
 import cv2
 import numpy as np
 
-
-
-def get_hulls(working_zones, image):
+def get_hulls(working_zones, image, min_area = 600):
     hull_goup = []
     for i, z in enumerate(working_zones):
         img_cropped = get_rectangle(image, z[0], z[1])
-        grouped_contours, img_contour = get_grouped_contours(img_cropped)  #needs a lot of time does break here
+
+        grouped_contours, img_contour = get_grouped_contours(image = img_cropped, min_area=min_area)  #needs a lot of time does break here
         hull_goup, img_hull = make_first_hull_closed(grouped_contours, img_contour)
         hull_goup_with_edge, img_hull_border = make_hull_connected_to_border(hull_goup, img_hull)
         hull_goup_with_corner, img_hull_corner = fill_corners(hull_goup_with_edge, img_hull_border)
@@ -74,6 +73,7 @@ def get_grouped_contours(image, min_area=600):
     Returns:
         list: Grouped contours
     """
+
     # Convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -109,7 +109,6 @@ def get_grouped_contours(image, min_area=600):
             # Add the contour to the grouped contours list
             grouped_contours.append(contour)
 
-    cv2.waitKey(0)
     return grouped_contours, img_contour
 
 def make_first_hull_closed(grouped_contours, image):
@@ -360,7 +359,6 @@ if __name__ == '__main__':
         print("Error: Failed to load the image.")
         exit()
 
-
     # get the contours
     grouped_contours, img_contour = get_grouped_contours(image)
     
@@ -381,100 +379,29 @@ if __name__ == '__main__':
 
 
     # make fake working zones
-
     h, w = image.shape[:2]
     h, w = int(h/2), int(w/2)
-
     z0 = [(0,0),(w,h)]
     z90 = [(0,0),(-w,-h)]
     z180 = [(0,0),(-w,h)]
     z270 = [(0,0),(w,-h)]
     working_zones = [z0, z90, z180, z270]
 
-    image2 = image.copy()
+    hull_finished_working_zones1, img_finished_hull_working_zones1 = get_hulls(working_zones, img_finished_hull, min_area = 200)
 
-    image_z0 = get_rectangle(image, z0[0], z0[1])
-    image_z90 = get_rectangle(image, z90[0], z90[1])
-    image_z180 = get_rectangle(image, z180[0], z180[1])
-    image_z270 = get_rectangle(image, z270[0], z270[1])
-
-    img_finished_hull2 = img_finished_hull.copy()
-
-    img_cropped = []
-
-    hull_finished_working_zones, img_finished_hull_working_zones = get_hulls(working_zones, img_finished_hull2)
-    """
-# -------- Getting the hull from each working zone --------
-    for i, z in enumerate([z0, z90, z180, z270]):
-        # get the contours
-        img_cropped.append(get_rectangle(img_finished_hull2, z[0], z[1]))
-        # get the contours
-        grouped_contours, img_contour = get_grouped_contours(img_cropped[i])
-        
-        # make the first hull closed
-        hull_goup, img_hull = make_first_hull_closed(grouped_contours, img_contour)
-        
-        # make the hull connected to the border
-        hull_goup_with_edge, img_hull_border = make_hull_connected_to_border(hull_goup, img_hull)
-        
-        # make the hull connected to the corner
-        hull_goup_with_corner, img_hull_corner = fill_corners(hull_goup_with_edge, img_hull_border)
-
-        # make from the filled hullwith border and corner only the contour (finished_hull)    
-        hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
+    image2 = np.copy(image)
+    hull_finished_working_zones2, img_finished_hull_working_zones2 = get_hulls(working_zones, image2)
 
 
-        h, w = image.shape[:2] # Get height and width of the image
-        cx, cy = w // 2, h // 2 # Calculate center coordinates
-        
-        # Calculate actual coordinates of the corner points based on center coordinates
-        x1, y1 = cx + z[0][0], cy + z[0][1]
-        x2, y2 = cx + z[1][0], cy + z[1][1]
-        
-        # Ensure the points are sorted in ascending order
-        x_start = min(x1, x2)
-        x_end = max(x1, x2)
-        y_start = min(y1, y2)
-        y_end = max(y1, y2)
-      
 
-        for hull in hull_finished:
-            if i == 0:      
-                cv2.drawContours(image2[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 4)
-                cv2.drawContours(image_z0, [hull], 0, (0, 0, 255), 4)
-            if i == 1:
-                cv2.drawContours(image2[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 4)
-                cv2.drawContours(image_z90, [hull], 0, (0, 255, 0), 4)
-            if i == 2:
-                cv2.drawContours(image2[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 4)
-                cv2.drawContours(image_z180, [hull], 0, (255, 0, 0), 4)
-            if i == 3:
-                cv2.drawContours(image2[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 4)
-                cv2.drawContours(image_z270, [hull], 0, (0, 255, 255), 4)
 
-    # Show the original image, the edges, and the image with the new hull
-    """
-    """
-    cv2.imshow("Original Image", image)
-    cv2.imshow("img_contour", img_contour)
-    cv2.imshow("img_hull",img_hull)
-    cv2.imshow("img_hull_border", img_hull_border)
-    cv2.imshow("image_with_hull2", img_hull_corner)
-    cv2.imshow("finished_hull", img_finished_hull)
+
     cv2.imshow("image", image)
-    """
-
-    cv2.imshow("image2", image2)
-    cv2.imshow("image_z0", img_finished_hull_working_zones[0])
-    cv2.imshow("image_z90", img_finished_hull_working_zones[1])
-    cv2.imshow("image_z180", img_finished_hull_working_zones[2])
-    cv2.imshow("image_z270", img_finished_hull_working_zones[3])
+    cv2.imshow("image with polygone for each working zone filtered first", img_finished_hull_working_zones1)
+    cv2.imshow("image with polygone for each working zone", img_finished_hull_working_zones2)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
-
-    # Create an empty mask for the result
-    mask_only_hull_with_border = np.zeros_like(image)
-
+    
