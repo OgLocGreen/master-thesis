@@ -1,38 +1,108 @@
 import cv2
 import numpy as np
 
-def get_hulls(working_zones, image, min_area = 600):
-    hull_goup = []
-    for i, z in enumerate(working_zones):
-        img_cropped = get_rectangle(image, z[0], z[1])
+import cv2
 
-        grouped_contours, img_contour = get_grouped_contours(image = img_cropped, min_area=min_area)  #needs a lot of time does break here
-        hull_goup, img_hull = make_first_hull_closed(grouped_contours, img_contour)
-        hull_goup_with_edge, img_hull_border = make_hull_connected_to_border(hull_goup, img_hull)
-        hull_goup_with_corner, img_hull_corner = fill_corners(hull_goup_with_edge, img_hull_border)
+def dilate_image(image, kernel_size=(20, 1), iterations=2):
+    """
+    Dilates the input image using a rectangular kernel.
+
+    Args:
+    - image (numpy.ndarray): a numpy array representing the input image
+    - kernel_size (tuple[int, int]): the size of the rectangular kernel for dilation. Default is (20, 1)
+    - iterations (int): the number of times to apply the dilation operation. Default is 2
+
+    Returns:
+    - dilated_image (numpy.ndarray): a numpy array representing the dilated image
+    """
+
+    # Define the kernel (structuring element) for dilation
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, kernel_size) # Create a rectangular kernel with the given size
+
+    # Perform dilation on the image
+    dilated_image = cv2.dilate(image, kernel, iterations=iterations) # Apply the dilation operation on the image
+
+    return dilated_image
+
+def get_hulls(image, working_zones=None, min_area=600):
+    """
+    Finds and draws the convex hulls of regions of interest in an image.
+
+    Args:
+    - working_zones: a list of tuples, where each tuple contains two points representing opposite corners of a rectangle.
+    - image: a NumPy array representing an image.
+    - min_area: an integer representing the minimum area threshold for contours. Default is 600.
+
+    Returns:
+    - hull_group: a list of lists, where each inner list contains the points of the convex hulls of the regions of interest.
+    - image: a NumPy array representing the input image with the convex hulls drawn on it.
+    """
+    hull_group = []
+    if working_zones is None:
+        # Get the contours and grouped contours in the cropped image
+        grouped_contours, img_contour = get_grouped_contours(image=image, min_area=min_area)
+
+        # Make the first hull closed
+        hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
+
+        # Connect the hull to the border of the image
+        hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)
+
+        # Fill in the corners of the hull
+        hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
+
+        # Extract the finished hull
         hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
-        
-        h, w = image.shape[:2]
-        cx, cy = w // 2, h // 2
-        x1, y1 = cx + z[0][0], cy + z[0][1]
-        x2, y2 = cx + z[1][0], cy + z[1][1]
-        x_start = min(x1, x2)
-        x_end = max(x1, x2)
-        y_start = min(y1, y2)
-        y_end = max(y1, y2)
-        
-        for hull in hull_finished:
-            if i == 0:      
-                cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 4)
-            elif i == 1:
-                cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 4)
-            elif i == 2:
-                cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 4)
-            elif i == 3:
-                cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 4)
-        hull_goup.append(hull_finished)
-    
-    return hull_goup, image
+
+        return hull_finished, img_finished_hull
+    else:
+            
+        # Loop over the working zones and find the convex hulls
+        for i, z in enumerate(working_zones):
+            # Crop the image to the current working zone
+            img_cropped = get_rectangle(image, z[0], z[1])
+
+            # Get the contours and grouped contours in the cropped image
+            grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=min_area)
+
+            # Make the first hull closed
+            hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
+
+            # Connect the hull to the border of the image
+            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)
+
+            # Fill in the corners of the hull
+            hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
+
+            # Extract the finished hull
+            hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
+
+            # Get the starting and ending coordinates of the current working zone
+            h, w = image.shape[:2]
+            cx, cy = w // 2, h // 2
+            x1, y1 = cx + z[0][0], cy + z[0][1]
+            x2, y2 = cx + z[1][0], cy + z[1][1]
+            x_start = min(x1, x2)
+            x_end = max(x1, x2)
+            y_start = min(y1, y2)
+            y_end = max(y1, y2)
+
+            # Draw the hulls on the image with different colors for different working zones
+            for hull in hull_finished:
+                if i == 0:
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 4)
+                elif i == 1:
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 4)
+                elif i == 2:
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 4)
+                elif i == 3:
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 4)
+
+            # append the finished hull for this working zone to the hull group list
+            hull_group.append(hull_finished)
+
+        return hull_group, image # return the list of hulls and the modified image
+
 
 def get_rectangle(image, point1, point2):
     """
@@ -359,20 +429,10 @@ if __name__ == '__main__':
         print("Error: Failed to load the image.")
         exit()
 
-    # get the contours
-    grouped_contours, img_contour = get_grouped_contours(image)
-    
-    # make the first hull closed
-    hull_goup, img_hull = make_first_hull_closed(grouped_contours, img_contour)
-    
-    # make the hull connected to the border
-    hull_goup_with_edge, img_hull_border = make_hull_connected_to_border(hull_goup, img_hull)
-    
-    # make the hull connected to the corner
-    hull_goup_with_corner, img_hull_corner = fill_corners(hull_goup_with_edge, img_hull_border)
 
-    # make from the filled hullwith border and corner only the contour (finished_hull)    
-    hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
+    # make from the filled hullwith border and corner only the contour (finished_hull)
+    hull_finished, img_finished_hull = get_hulls(image)
+
 
     # make the working zones
     #z0, z90, z180, z270 = make_working_zones(image)
@@ -387,21 +447,50 @@ if __name__ == '__main__':
     z270 = [(0,0),(w,-h)]
     working_zones = [z0, z90, z180, z270]
 
-    hull_finished_working_zones1, img_finished_hull_working_zones1 = get_hulls(working_zones, img_finished_hull, min_area = 200)
+    cv2.imshow("img_finished_hull", img_finished_hull)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    # make the hulls for each working zone
+    img_finished_hull2 = np.copy(img_finished_hull)
+    hull_finished_working_zones1, img_finished_hull_working_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 200)
 
     image2 = np.copy(image)
-    hull_finished_working_zones2, img_finished_hull_working_zones2 = get_hulls(working_zones, image2)
+    hull_finished_working_zones2, img_finished_hull_working_zones2 = get_hulls(image2, working_zones)
+
+
+    # for the dilte image i need to have the a pic for each working area
+    # then dilate each image and get the contours againg
+    # then add the picture together -> or make out of these counturs 
+    # the code below is just for all contours and not for each in the right direction
+    # problem maybe we can just delay the conturs/hulls both diractions 
+    # like it would get not just bigger to the left but also ro the right
+    # same with up and down
+    
+    # exmapl for the dilate image
+    # dilate zones
+    img_finished_hull3 = np.copy(img_finished_hull)
+    dilate_image = dilate_image(img_finished_hull3)
+
+    # get the hulls of the dilated zones
+    grouped_hulls_dilate, img_hulls_dilate = get_hulls(dilate_image)
+    
+    # get trapzoid for each hull
 
 
 
-
-
+    # show the images
     cv2.imshow("image", image)
     cv2.imshow("image with polygone for each working zone filtered first", img_finished_hull_working_zones1)
     cv2.imshow("image with polygone for each working zone", img_finished_hull_working_zones2)
+    cv2.imshow("image with poligones dilated", img_hulls_dilate)
+    cv2.imshow("dilate image", dilate_image)
+
+
+    cv2.imwrite("img_hulls_dilate.jpg", img_hulls_dilate)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
 
-    
+

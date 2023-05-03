@@ -3,6 +3,9 @@ import numpy as np
 # Load the image
 image = cv2.imread('closed_contours.png', cv2.IMREAD_GRAYSCALE)
 
+
+
+
 # Define the kernel (structuring element) for dilation
 kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 1)) # 1x5 rectangular kernel for left dilation
 
