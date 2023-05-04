@@ -2,10 +2,99 @@ import cv2
 import numpy as np
 import array
 
-import seidel
+import seidel as sd
 import matplotlib.pyplot as plt
 from descartes import PolygonPatch
 from shapely.geometry import  Polygon
+
+
+
+def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image):
+    """
+    Given grouped polygones and their corresponding images, calculate the trapezoids of each polygone.
+    Args:
+        grouped_polygones_dilate_zones (list): List of grouped polygones for each image.
+        img_dilate_polygone_zones (list): List of cropped images for each polygone.
+        image (ndarray): Original image.
+    Returns:
+        polygones_zones (list): List of trapezoids for each polygone.
+    """
+    polygones_zones = []
+    for gouped_polygones, image_cropped_polygones in zip(grouped_polygones_dilate_zones, img_dilate_polygone_zones):
+        trapezoids_list = []
+        for polygone in gouped_polygones:
+            array1 = [[float(x), float(y)] for point in polygone for x, y in point]
+
+            # Convert the points to a NumPy array of shape (n,1,2)
+            points_array = np.array([array1], dtype=np.int32)
+
+            # Draw the polygon on the image
+            image5 = np.copy(image)
+            for point in array1:
+                cv2.polylines(image5, [points_array], True, (0, 0, 255), thickness=2)
+
+            # get trapzoid for each hull
+            seidel1 = sd.Triangulator(array1)
+            triangles = seidel1.triangles()
+            trapezoids = seidel1.trapezoids
+
+            trap = []
+            for t in trapezoids:
+                verts = t.vertices()
+                trap.append(verts)
+
+            # Changes from [[(x1,y1),(x2,y2),(x3,y3),(x4,y4)],[x1,y2].....] to [[[x1,y1],[x2,y2],[x3,y3],[x4,y4]],[[x1,y2].....]]
+            image4 = np.zeros_like(image_cropped_polygones)
+            trap_group = []
+            for points_trap in trap:
+                point_trap = []
+                for x, y in points_trap:
+                    point_trap.append([float(x), float(y)])
+                trap_group.append(point_trap)
+
+            # Reshape array so it can be printed with opencv
+            points_array = np.array([trap_group], dtype=np.int32)
+            for point in trap_group:
+                # Draw the polygon on the image
+                # Reshape the array to have shape (1, n, 2)
+                pts = np.array([point], np.int32)
+                pts = pts.reshape((-1, 1, 2))
+                cv2.polylines(image4, [pts], True, (0, 0, 255), thickness=2)
+
+            # Add all trapezoids of one polygone to a list
+            trapezoids_list.append(trap_group)
+
+        polygones_zones.append(trapezoids_list)
+
+    return polygones_zones
+
+def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)]):
+    """
+    This function takes in a list of images, dilates each image using the dilate_image function, and then extracts 
+    polygons from the dilated image using the get_hulls function. The dilated image, grouped polygons, and polygon 
+    image are then appended to separate lists. 
+    
+    Args:
+    - img_list: A list of images to be dilated and polygonalized
+    
+    Returns:
+    - image_dilate_zones: A list of dilated images
+    - grouped_polygones_dilate_zones: A list of grouped polygons extracted from the dilated images
+    - img_dilate_polygone_zones: A list of images with only polygons extracted from the dilated images
+    """
+    image_dilate_zones = []
+    grouped_polygones_dilate_zones = []
+    img_dilate_polygone_zones = []
+    
+    for img,orientation in zip(img_list, orientations):
+        img_dilate = dilate_image(img, kernel_size = orientation)
+        image_dilate_zones.append(img_dilate)
+        grouped_hulls_dilate, img_hulls_dilate = get_hulls(img_dilate)
+        grouped_polygones_dilate_zones.append(grouped_hulls_dilate)
+        img_dilate_polygone_zones.append(img_hulls_dilate)
+    
+    return image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones
+
 
 def dilate_image(image, kernel_size=(20, 1), iterations=2):
     """
@@ -42,6 +131,7 @@ def get_hulls(image, working_zones=None, min_area=600):
     - image: a NumPy array representing the input image with the convex hulls drawn on it.
     """
     hull_group = []
+    images_cropped_polygones = []
     if working_zones is None:
         # Get the contours and grouped contours in the cropped image
         grouped_contours, img_contour = get_grouped_contours(image=image, min_area=min_area)
@@ -91,21 +181,29 @@ def get_hulls(image, working_zones=None, min_area=600):
             y_start = min(y1, y2)
             y_end = max(y1, y2)
 
+
+            image_black_cropped = np.zeros_like(img_cropped) # Top Left
+
             # Draw the hulls on the image with different colors for different working zones
             for hull in hull_finished:
                 if i == 0:
-                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 4)
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 2)
+                    cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 1:
-                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 4)
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 2)
+                    cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 2:
-                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 4)
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 2)
+                    cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 3:
-                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 4)
+                    cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 2)
+                    cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
 
             # append the finished hull for this working zone to the hull group list
             hull_group.append(hull_finished)
+            images_cropped_polygones.append(image_black_cropped)
 
-        return hull_group, image # return the list of hulls and the modified image
+        return hull_group, image, images_cropped_polygones # return the list of hulls and the modified image
 
 
 def get_rectangle(image, point1, point2):
@@ -178,7 +276,7 @@ def get_grouped_contours(image, min_area=600):
         # Filter out contours with small area (e.g. text)
         if area >= min_area and len(approx) >= 3:
             # Draw the contour in white on the mask
-            cv2.drawContours(img_contour, [contour], 0, (255, 255, 255), -1)
+            cv2.drawContours(img_contour, [contour], 0, (255, 255, 255), 2)
 
             # Add the contour to the grouped contours list
             grouped_contours.append(contour)
@@ -208,7 +306,7 @@ def make_first_hull_closed(grouped_contours, image):
         # Convert the contour to a closed line
         hull = cv2.convexHull(grouped_contours[i])
         hull_group.append(hull)
-        cv2.drawContours(img_hull, [hull], 0, (0, 0, 255), 4)
+        cv2.drawContours(img_hull, [hull], 0, (0, 0, 255), 2)
 
     return hull_group, img_hull
 
@@ -262,7 +360,7 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
         hull_group_with_edge.append(hull_from_edges)
 
         # Draw the hull on the image
-        cv2.drawContours(img_hull_border, [hull_from_edges], 0, 255, -1)
+        cv2.drawContours(img_hull_border, [hull_from_edges], 0, 255, 2)
     
     return hull_group_with_edge, img_hull_border
 
@@ -374,7 +472,7 @@ def extract_finished_hull(img_hull_corner):
     for polygone in polys:
 
         # Approximate the convex hull with a polygon
-        cv2.drawContours(img_finished_hull, [polygone], 0, (255, 255, 255), 4)
+        cv2.drawContours(img_finished_hull, [polygone], 0, (255, 255, 255), 2)
 
     return polys, img_finished_hull
 
@@ -462,145 +560,48 @@ if __name__ == '__main__':
 
     # make the hulls for each working zone
     img_finished_hull2 = np.copy(img_finished_hull)
-    hull_finished_working_zones1, img_finished_hull_working_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 200)
-
-    image2 = np.copy(image)
-    hull_finished_working_zones2, img_finished_hull_working_zones2 = get_hulls(image2, working_zones)
+        
+    hull_finished_working_zones1, img_finished_hull_working_zones1, img_list_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 200)
 
 
-    # for the dilte image i need to have the a pic for each working area
-    # then dilate each image and get the contours againg
-    # then add the picture together -> or make out of these counturs 
-    # the code below is just for all contours and not for each in the right direction
-    # problem maybe we can just delay the conturs/hulls both diractions 
-    # like it would get not just bigger to the left but also ro the right
-    # same with up and down
-    
-    # exmapl for the dilate image
-    # dilate zones
-    img_finished_hull3 = np.copy(img_finished_hull)
-    dilate_image = dilate_image(img_finished_hull3)
+    # make the dilate of each polygone in each working zone
+    image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones = dilate_polygons(img_list_zones1)
 
-    # get the hulls of the dilated zones
-    grouped_hulls_dilate, img_hulls_dilate = get_hulls(dilate_image)
-    
+    # make the trapezoids of each polygone in each working zone
+    polygones_zones = get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image)
 
-    """
-    image3 = np.copy(image)
-    # Get the edges of the polygon
-    edges = []
-    edges_polygone = []
-    for group in grouped_hulls_dilate:
-        for i in range(len(group)):
-            edge = [[group[i][0][0], group[i][0][1]], [group[(i+1)%len(group)][0][0], group[(i+1)%len(group)][0][1]]]
-            edges.append(edge)
-
-        # Print the edges as points and save them in an array
-
-        points = []
-        for edge in edges:
-            p1 = tuple(edge[0])
-            #p2 = tuple(edge[1])
-            points.append(p1)
-            #points.append(p2)
-            cv2.circle(image3, p1, 3, (0, 255, 0), 1)
-            #cv2.circle(image3, p2, 3, (0, 255, 0), 3)
-        edges_polygone.append(edges)
-    """
-
-    dude = [[174.50415,494.59368],[215.21844,478.87939],[207.36129,458.87939],[203.07558,441.02225],[203.07558,418.1651],
-    [210.93272,394.59367],[224.50415,373.1651],[241.64701,358.1651],[257.36129,354.59367],[275.93272,356.73653],
-    [293.07558,359.59367],[309.50415,377.45082],[322.36129,398.1651],[331.64701,421.73653],[335.21844,437.45082],
-    [356.64701,428.52225],[356.1113,428.34367],[356.1113,428.34367],[368.78987,419.59368],[349.50415,384.59367],
-    [323.78987,359.59367],[290.93272,343.87939],[267.36129,341.02225],[264.50415,331.02225],[264.50415,321.02225],
-    [268.78987,306.02225],[285.93272,286.02225],[295.21844,270.30796],[303.78987,254.59367],[306.64701,213.87939],
-    [320,202.36218],[265,202.36218],[286.64701,217.45082],[293.78987,241.02225],[285,257.36218],[270.93272,271.73653],
-    [254.50415,266.02225],[250.93272,248.1651],[256.64701,233.1651],[256.64701,221.02225],[245.93272,215.30796],
-    [238.78987,216.73653],[233.78987,232.45082],[232.36129,249.59367],[243.07558,257.09367],[242.89701,270.30796],
-    [235.93272,279.95082],[222.36129,293.1651],[205.21844,300.6651],[185,297.36218],[170,242.36218],[175,327.36218],
-    [185,322.36218],[195,317.36218],[230.75415,301.02225],[235.39701,312.45082],[240.57558,323.52225],
-    [243.61129,330.48653],[245.21844,335.12939],[245.03987,344.4151],[229.86129,349.4151],[209.14701,362.09367],
-    [192.89701,377.80796],[177.18272,402.27225],[172.36129,413.87939],[169.14701,430.48653],[168.61129,458.52225],
-    [168.61129,492.80796]]
-
-
-    test1 = grouped_hulls_dilate[0]
-    array1 = [[float(x), float(y)] for point in test1 for x, y in point]
-
+    # show the trapezoids
+    for polygone_groups, image_cropped_polygones in zip(polygones_zones,img_list_zones1):
+        image5 = np.zeros_like(image_cropped_polygones)
+        for polygone in polygone_groups:
+            for trap in polygone:
+                # Draw the polygon on the image
+                # Reshape the array to have shape (1, n, 2)
+                pts = np.array([trap], np.int32)
+                pts = pts.reshape((-1, 1, 2))
+                cv2.polylines(image5, [pts], True, (0, 0, 255), thickness=2)
+        cv2.imshow("image5", image5)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     
+    ### Open Points
+    # Change how to connecto to the Border (Maybe Check for last and first point and connect them to the Border)
+    
+    # Check sometime the polygone was filled (no problem for this case but whats when there is a hole in the middle)
 
-    # Convert the points to a NumPy array of shape (n,1,2)
-    points_array = np.array([array1], dtype=np.int32)
+    # Change orientation of the dilate polygones now only to one side x +- but needs also for y +- also find out which working zones
 
-    image5 = np.copy(image)
-    for point in array1:
-    # Draw the polygon on the image
-        cv2.polylines(image5, [points_array], True, (0, 0, 255), thickness=2)
+    # Change orientation of the Trapezoids
 
+    # the dilation some times is bigger then the orginal image
+    # whats when the dilation is bigger then the working area?
+    # or how to add this to the working area?
 
-    cv2.imshow("image5", image5)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-    # get trapzoid for each hull
-    seidel = seidel.Triangulator(array1)
-    triangles = seidel.triangles()
-    trapezoids = seidel.trapezoids
-
-
-
-    plt.figure()
-    points2 = []
-    trap = []
-    for t in trapezoids:
-        verts = t.vertices()
-
-        trap.append(verts)
-        plt.gca().add_patch(PolygonPatch(Polygon(verts)))
-        plt.gca().autoscale(tight=False)
-        points2.append(PolygonPatch(Polygon(verts)))
-
-    plt.show()
-
-
-
-
-
-    image4 = np.copy(image)
-    # Convert the points to a NumPy array of shape (n,1,2)
-    point_trap = []
-    trap_group = []
-    for points_trap in trap:
-        point_trap = []
-        for x,y in points_trap:
-            point_trap.append([float(x), float(y)])
-        trap_group.append(point_trap)
-
-    points_array = np.array([trap_group], dtype=np.int32)
-    for point in trap_group:
-        # Draw the polygon on the image
-        # Reshape the array to have shape (1, n, 2)
-        pts = np.array([point], np.int32)
-        pts = pts.reshape((-1, 1, 2))
-        cv2.polylines(image4, [pts], True, (0, 0, 255), thickness=2)
-
-        cv2.imshow("image4", image4)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
+    
     # show the images
     cv2.imshow("image", image)
     cv2.imshow("image with polygone for each working zone filtered first", img_finished_hull_working_zones1)
-    cv2.imshow("image with polygone for each working zone", img_finished_hull_working_zones2)
-    cv2.imshow("image with poligones dilated", img_hulls_dilate)
-    cv2.imshow("dilate image", dilate_image)
-
-    cv2.imwrite("img_hulls_dilate.jpg", img_hulls_dilate)
-
-
-
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
