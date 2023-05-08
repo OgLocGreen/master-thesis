@@ -81,14 +81,14 @@ def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)], thresh
     image are then appended to separate lists. 
     
     Args:
-    - img_list: A list of images to be dilated and polygonalized
-    - orientations: A list of tuples representing the kernel size for each image
-    - threshold_detail_polygone: A float representing the threshold for polygonalization
+        img_list: A list of images to be dilated and polygonalized
+        orientations: A list of tuples representing the kernel size for each image
+        threshold_detail_polygone: A float representing the threshold for polygonalization
     
     Returns:
-    - image_dilate_zones: A list of dilated images
-    - grouped_polygones_dilate_zones: A list of grouped polygons extracted from the dilated images
-    - img_dilate_polygone_zones: A list of images with only polygons extracted from the dilated images
+        image_dilate_zones: A list of dilated images
+        grouped_polygones_dilate_zones: A list of grouped polygons extracted from the dilated images
+        img_dilate_polygone_zones: A list of images with only polygons extracted from the dilated images
     """
     image_dilate_zones = []
     grouped_polygones_dilate_zones = []
@@ -108,12 +108,12 @@ def dilate_image(image, kernel_size=(20, 1), iterations=2):
     Dilates the input image using a rectangular kernel.
 
     Args:
-    - image (numpy.ndarray): a numpy array representing the input image
-    - kernel_size (tuple[int, int]): the size of the rectangular kernel for dilation. Default is (20, 1)
-    - iterations (int): the number of times to apply the dilation operation. Default is 2
+        image (numpy.ndarray): a numpy array representing the input image
+        kernel_size (tuple[int, int]): the size of the rectangular kernel for dilation. Default is (20, 1)
+        iterations (int): the number of times to apply the dilation operation. Default is 2
 
     Returns:
-    - dilated_image (numpy.ndarray): a numpy array representing the dilated image
+        dilated_image (numpy.ndarray): a numpy array representing the dilated image
     """
 
     # Define the kernel (structuring element) for dilation
@@ -169,23 +169,15 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
   
 
             # Get the contours and grouped contours in the cropped image
-            grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=min_area)
-
-
-
+            grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=20)
 
             # Make the first hull closed
             hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
-
-
 
             # Connect the hull to the border of the image
             hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)     #TODO: check why when the point is to close to the boarder it does not work
                                                                                                             # vlt muss ich auch den alten algorithmus austauschen und auch wieder ein Dilation hinzufügen oder eb
                                                                                                             # diese checken letzter punkt in der liste bzw. weil ich aber ja nicht ob der letzte punkt immer der nähste an der aussen kannte ist      
-            cv2.imshow("img_hull", img_hull_border)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
 
             # Fill in the corners of the hull
             hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
@@ -266,7 +258,8 @@ def get_grouped_contours(image, min_area=600):
         min_area (int, optional): Minimum area threshold to filter out small contours. Defaults to 600.
 
     Returns:
-        list: Grouped contours
+        grouped_contours (list): A list of grouped contours
+        img_contour (numpy.ndarray): The input image with the grouped contours drawn on it
     """
 
     # Convert the image to grayscale
@@ -347,8 +340,7 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
         numpy.ndarray: Image with the updated convex hulls drawn and filled
     """
 
-
-     # Draw the new convex hulls on a black image
+    # Draw the new convex hulls on a black image
     img_hull_border = np.zeros_like(image)
 
     hull_group_with_edge = []
@@ -357,38 +349,67 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
     for hull in grouped_hulls:
         # Extract the edges from the convex hull
         edges = []
+        edges2 = []
+        edges3 = []
         for i in range(len(hull) - 1):
             edges.append((tuple(hull[i][0]), tuple(hull[i + 1][0])))
         edges.append((tuple(hull[-1][0]), tuple(hull[0][0])))
-
+     
         # Update vertices of edges close to the border
         for i, edge in enumerate(edges):
             updated_edge = []
+            updated_edge2 = []
+            updated_edge3 = []
             for vertex in edge:
                 x, y = vertex
+                x1, y1 = None, None
+                updated_edge3.append((x, y))
                 if x < threshold:
                     x = 0
+                    x1 = 0
                 elif x >= image.shape[1] - threshold:
                     x = image.shape[1] - 1
+                    x1 = image.shape[1] - 1
                 if y < threshold:
                     y = 0
+                    y1 = 0
                 elif y >= image.shape[0] - threshold:
                     y = image.shape[0] - 1
+                    y1 = image.shape[0] - 1
                 updated_edge.append((x, y))
+                if x1 != None or y1 != None:
+                    if x1 == None:
+                        x1 = x
+                    if y1 == None:
+                        y1 = y
+                    updated_edge2.append((x1, y1))
             edges[i] = tuple(updated_edge)
+            edges3.append(tuple(updated_edge3))
+            if updated_edge2 != []:
+                if len(updated_edge2) == 1:
+                    updated_edge2.append(updated_edge2[0])
+                edges2.append(tuple(updated_edge2))
 
+        if edges2 != []:
+            edges4 = edges2[::-1]
+            for edge in edges4:
+                edges3.append(edge)
 
-            
+        # Create a black image
+        img = np.zeros_like(image)
+
+        # Draw each edge on the image
+        for edge in edges3:
+            cv2.line(img, edge[0], edge[1], (255, 255, 255), 2)
 
         # Create a new convex hull from the updated edges
-        hull_from_edges = cv2.convexHull(np.array(edges).reshape(-1, 2), clockwise=False)
+        hull_from_edges = cv2.convexHull(np.array(edges3).reshape(-1, 2), clockwise=False)
 
         # Add the hull to the hull group
         hull_group_with_edge.append(hull_from_edges)
 
         # Draw the hull on the image
         cv2.drawContours(img_hull_border, [hull_from_edges], 0, 255, 2)
-    
     return hull_group_with_edge, img_hull_border
 
 def fill_corners(hull_goup_with_edge, image):
@@ -584,7 +605,7 @@ if __name__ == '__main__':
     # make the hulls for each working zone
     img_finished_hull2 = np.copy(img_finished_hull)
         
-    hull_finished_working_zones1, img_finished_hull_working_zones1, img_list_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 200)
+    hull_finished_working_zones1, img_finished_hull_working_zones1, img_list_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 50)
 
 
     # make the dilate of each polygone in each working zone
@@ -603,9 +624,9 @@ if __name__ == '__main__':
                 pts = np.array([trap], np.int32)
                 pts = pts.reshape((-1, 1, 2))
                 cv2.polylines(image5, [pts], True, (0, 0, 255), thickness=2)
-        cv2.imshow("image5", image5)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        #cv2.imshow("image5", image5)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
 
     
     ### Open Points
@@ -613,10 +634,25 @@ if __name__ == '__main__':
     
     # !!! Check the Working zones
 
-    # the dilation some times is bigger then the orginal image
-    # whats when the dilation is bigger then the working area?
-    # then we cant drive with a fixed speed
-    # couse we need that dilation for geting to the same speed  
+    # the dilation some times is bigger then the borders
+    # so the problem is that sometimes we only can scan a part of the zone
+    # this could be a problem for edges of the working zones
+    # because somethimes they could overlap
+
+    # Option 1:
+    # theoretical we could scan the same part twice
+    # for scaning fine but not for repairing
+
+    # Option 2:
+    # check if the contour complete inside a working zone
+    # check if the contour is after the dilation still in the contour
+    # decide if its better for better zone 
+    # to divide the zone in two zones or more
+    # or scan like in option 1
+    
+
+    # so we need to check if the dilation is bigger then the orginal image
+
 
 
 
