@@ -20,10 +20,13 @@ def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, im
         polygones_zones (list): List of trapezoids for each polygone.
     """
     polygones_zones = []
-    for gouped_polygones, image_cropped_polygones in zip(grouped_polygones_dilate_zones, img_dilate_polygone_zones):
+    for i, (gouped_polygones, image_cropped_polygones) in enumerate(zip(grouped_polygones_dilate_zones, img_dilate_polygone_zones)):
         trapezoids_list = []
         for polygone in gouped_polygones:
-            array1 = [[float(x), float(y)] for point in polygone for x, y in point]
+            if i == 0 or i == 1:
+                array1 = [[float(x), float(y)] for point in polygone for x, y in point]
+            if i == 2 or i == 3:
+                array1 = [[float(y), float(x)] for point in polygone for x, y in point]
 
             # Convert the points to a NumPy array of shape (n,1,2)
             points_array = np.array([array1], dtype=np.int32)
@@ -49,7 +52,10 @@ def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, im
             for points_trap in trap:
                 point_trap = []
                 for x, y in points_trap:
-                    point_trap.append([float(x), float(y)])
+                    if i == 0 or i == 1:
+                        point_trap.append([float(x), float(y)])
+                    if i == 2 or i == 3:
+                        point_trap.append([float(y), float(x)])
                 trap_group.append(point_trap)
 
             # Reshape array so it can be printed with opencv
@@ -68,7 +74,7 @@ def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, im
 
     return polygones_zones
 
-def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)]):
+def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)], threshold_detail_polygone = 0.01):
     """
     This function takes in a list of images, dilates each image using the dilate_image function, and then extracts 
     polygons from the dilated image using the get_hulls function. The dilated image, grouped polygons, and polygon 
@@ -76,6 +82,8 @@ def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)]):
     
     Args:
     - img_list: A list of images to be dilated and polygonalized
+    - orientations: A list of tuples representing the kernel size for each image
+    - threshold_detail_polygone: A float representing the threshold for polygonalization
     
     Returns:
     - image_dilate_zones: A list of dilated images
@@ -89,12 +97,11 @@ def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)]):
     for img,orientation in zip(img_list, orientations):
         img_dilate = dilate_image(img, kernel_size = orientation)
         image_dilate_zones.append(img_dilate)
-        grouped_hulls_dilate, img_hulls_dilate = get_hulls(img_dilate)
+        grouped_hulls_dilate, img_hulls_dilate = get_hulls(img_dilate, threshold_detail_polygone = threshold_detail_polygone)
         grouped_polygones_dilate_zones.append(grouped_hulls_dilate)
         img_dilate_polygone_zones.append(img_hulls_dilate)
     
     return image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones
-
 
 def dilate_image(image, kernel_size=(20, 1), iterations=2):
     """
@@ -117,7 +124,7 @@ def dilate_image(image, kernel_size=(20, 1), iterations=2):
 
     return dilated_image
 
-def get_hulls(image, working_zones=None, min_area=600):
+def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone = 0.01):
     """
     Finds and draws the convex hulls of regions of interest in an image.
 
@@ -146,30 +153,45 @@ def get_hulls(image, working_zones=None, min_area=600):
         hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
 
         # Extract the finished hull
-        hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
+        hull_finished, img_finished_hull = extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = threshold_detail_polygone)
 
         return hull_finished, img_finished_hull
     else:
-            
         # Loop over the working zones and find the convex hulls
         for i, z in enumerate(working_zones):
-            # Crop the image to the current working zone
-            img_cropped = get_rectangle(image, z[0], z[1])
+            if i == 0:
+                # Crop the image to the current working zone
+                img_cropped, image_deleted = get_rectangle(image, z[0], z[1])
+            else:
+                                # Crop the image to the current working zone
+                img_cropped, image_deleted = get_rectangle(image_deleted, z[0], z[1])
+
+  
 
             # Get the contours and grouped contours in the cropped image
             grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=min_area)
 
+
+
+
             # Make the first hull closed
             hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
 
+
+
             # Connect the hull to the border of the image
-            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)
+            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)     #TODO: check why when the point is to close to the boarder it does not work
+                                                                                                            # vlt muss ich auch den alten algorithmus austauschen und auch wieder ein Dilation hinzufügen oder eb
+                                                                                                            # diese checken letzter punkt in der liste bzw. weil ich aber ja nicht ob der letzte punkt immer der nähste an der aussen kannte ist      
+            cv2.imshow("img_hull", img_hull_border)
+            cv2.waitKey(0)
+            cv2.destroyAllWindows()
 
             # Fill in the corners of the hull
             hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
 
             # Extract the finished hull
-            hull_finished, img_finished_hull = extract_finished_hull(img_hull_corner)
+            hull_finished, img_finished_hull = extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = threshold_detail_polygone)
 
             # Get the starting and ending coordinates of the current working zone
             h, w = image.shape[:2]
@@ -205,7 +227,6 @@ def get_hulls(image, working_zones=None, min_area=600):
 
         return hull_group, image, images_cropped_polygones # return the list of hulls and the modified image
 
-
 def get_rectangle(image, point1, point2):
     """
     Get a rectangle from the input image defined by point1 and point2.
@@ -215,6 +236,7 @@ def get_rectangle(image, point1, point2):
         point2 (tuple): The second point defining the bottom-right corner of the rectangle as (x, y) coordinates.
     Returns:
         numpy.ndarray: The cropped image within the rectangle.
+        numpy.ndarray: Orginal image with a black mask over the cropped rectangle.
     """
     h, w = image.shape[:2] # Get height and width of the image
     cx, cy = w // 2, h // 2 # Calculate center coordinates
@@ -231,8 +253,9 @@ def get_rectangle(image, point1, point2):
     
     # Crop the image to the rectangle defined by the points
     cropped_image = image[y_start:y_end, x_start:x_end]
-    
-    return cropped_image
+    mask = cv2.rectangle(image.copy(), (x_start, y_start), (x_end, y_end), (0,0,0), -1)
+  
+    return cropped_image, mask
 
 def get_grouped_contours(image, min_area=600):
     """
@@ -240,7 +263,7 @@ def get_grouped_contours(image, min_area=600):
 
     Args:
         image (numpy.ndarray): Input image
-        min_area (int, optional): Minimum area threshold to filter out small contours. Defaults to 1000.
+        min_area (int, optional): Minimum area threshold to filter out small contours. Defaults to 600.
 
     Returns:
         list: Grouped contours
@@ -299,7 +322,7 @@ def make_first_hull_closed(grouped_contours, image):
     hull_group = []
 
     # Create a copy of the input image to draw the hulls on
-    img_hull = np.copy(image)
+    img_hull = np.zeros_like(image)
 
     # Number the grouped contours
     for i in range(len(grouped_contours)):
@@ -324,7 +347,8 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
         numpy.ndarray: Image with the updated convex hulls drawn and filled
     """
 
-    # Draw the new convex hulls on a black image
+
+     # Draw the new convex hulls on a black image
     img_hull_border = np.zeros_like(image)
 
     hull_group_with_edge = []
@@ -353,6 +377,9 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
                 updated_edge.append((x, y))
             edges[i] = tuple(updated_edge)
 
+
+            
+
         # Create a new convex hull from the updated edges
         hull_from_edges = cv2.convexHull(np.array(edges).reshape(-1, 2), clockwise=False)
 
@@ -363,7 +390,6 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
         cv2.drawContours(img_hull_border, [hull_from_edges], 0, 255, 2)
     
     return hull_group_with_edge, img_hull_border
-
 
 def fill_corners(hull_goup_with_edge, image):
     """
@@ -436,14 +462,13 @@ def fill_corners(hull_goup_with_edge, image):
     # Return the output image and the updated convex hulls
     return new_group_all, img_hull_corner
 
-
-def extract_finished_hull(img_hull_corner):
+def extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = 0.01):
     '''
     Extracts the finished convex hull from the input image with filled corners.
 
     Args:
         img_hull_corner (numpy array): Input image with filled corners.
-
+        threshold_detail_polygone (float): Threshold for the detail of the polygone.
     Returns:
         finished_hull (numpy array): Image with only the contour of the convex hulls.
     '''
@@ -462,7 +487,7 @@ def extract_finished_hull(img_hull_corner):
 
 
     # make poly out of hull
-    polys = [cv2.approxPolyDP(hull, 0.01 * cv2.arcLength(hull, True), True) for hull in hulls]
+    polys = [cv2.approxPolyDP(hull, threshold_detail_polygone * cv2.arcLength(hull, True), True) for hull in hulls]
 
     # Create a copy of the input image to draw the hulls on
     img_finished_hull = np.zeros_like(img_hull_corner)
@@ -475,7 +500,6 @@ def extract_finished_hull(img_hull_corner):
         cv2.drawContours(img_finished_hull, [polygone], 0, (255, 255, 255), 2)
 
     return polys, img_finished_hull
-
 
 def make_working_zones(image):
     '''
@@ -528,7 +552,6 @@ def make_working_zones(image):
     z270 = [(x1,y1),(x2,y2)]
 
     return z0, z90, z180, z270
-
 
 if __name__ == '__main__':
 
@@ -588,15 +611,14 @@ if __name__ == '__main__':
     ### Open Points
     # Change how to connecto to the Border (Maybe Check for last and first point and connect them to the Border)
     
-    # Check sometime the polygone was filled (no problem for this case but whats when there is a hole in the middle)
-
-    # Change orientation of the dilate polygones now only to one side x +- but needs also for y +- also find out which working zones
-
-    # Change orientation of the Trapezoids
+    # !!! Check the Working zones
 
     # the dilation some times is bigger then the orginal image
     # whats when the dilation is bigger then the working area?
-    # or how to add this to the working area?
+    # then we cant drive with a fixed speed
+    # couse we need that dilation for geting to the same speed  
+
+
 
     
     # show the images
