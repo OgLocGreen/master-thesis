@@ -129,16 +129,18 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
     Finds and draws the convex hulls of regions of interest in an image.
 
     Args:
-    - working_zones: a list of tuples, where each tuple contains two points representing opposite corners of a rectangle.
-    - image: a NumPy array representing an image.
-    - min_area: an integer representing the minimum area threshold for contours. Default is 600.
-
+        working_zones: a list of tuples, where each tuple contains two points representing opposite corners of a rectangle.
+        image: a NumPy array representing an image.
+        min_area: an integer representing the minimum area threshold for contours. Default is 600.
+        threshold_detail_polygone: A float representing the threshold for polygonalization(detail of the polygone) Default is 0.01
     Returns:
-    - hull_group: a list of lists, where each inner list contains the points of the convex hulls of the regions of interest.
-    - image: a NumPy array representing the input image with the convex hulls drawn on it.
+        hull_group: a list of lists, where each inner list contains the points of the convex hulls of the regions of interest.
+        image: a NumPy array representing the input image with the convex hulls drawn on it.
+        images_iterations: a list of images after each iteration a pic was cropped out
     """
     hull_group = []
     images_cropped_polygones = []
+    images_iterations = []
     if working_zones is None:
         # Get the contours and grouped contours in the cropped image
         grouped_contours, img_contour = get_grouped_contours(image=image, min_area=min_area)
@@ -163,10 +165,10 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
                 # Crop the image to the current working zone
                 img_cropped, image_deleted = get_rectangle(image, z[0], z[1])
             else:
-                                # Crop the image to the current working zone
+                # Crop the image to the current working zone
                 img_cropped, image_deleted = get_rectangle(image_deleted, z[0], z[1])
 
-  
+            images_iterations.append(image_deleted)
 
             # Get the contours and grouped contours in the cropped image
             grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=20)
@@ -217,7 +219,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             hull_group.append(hull_finished)
             images_cropped_polygones.append(image_black_cropped)
 
-        return hull_group, image, images_cropped_polygones # return the list of hulls and the modified image
+        return hull_group, image, images_cropped_polygones, images_iterations
 
 def get_rectangle(image, point1, point2):
     """
@@ -232,7 +234,7 @@ def get_rectangle(image, point1, point2):
     """
     h, w = image.shape[:2] # Get height and width of the image
     cx, cy = w // 2, h // 2 # Calculate center coordinates
-    
+
     # Calculate actual coordinates of the corner points based on center coordinates
     x1, y1 = cx + point1[0], cy + point1[1]
     x2, y2 = cx + point2[0], cy + point2[1]
@@ -522,7 +524,8 @@ def extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = 0.01
 
     return polys, img_finished_hull
 
-def make_working_zones(image):
+def make_working_zones(\
+        image, h_c = int(591/2), l_c = int(1654/2), y_d = 30, x_d = 55, h_r = 25, l_r = 50):
     '''
     Creates working zones based on the input image dimensions and specified parameters.
 
@@ -540,36 +543,36 @@ def make_working_zones(image):
     h_c = int(image.shape[0]/2)      # Hälfte der Breite des Blechs entspricht der Höhe des Bildes
     l_c = int(image.shape[1]/2)     # Hälfte der Länge des Blechs entspricht der Breite des Bildes
     y_d = 30                # Abstand y der Kamera vom Mittelpunkt des Robots
-    x_d = 55                # Abstand x der Kamera vom Mittelpunkt des Robots
+    x_d = 50                # Abstand x der Kamera vom Mittelpunkt des Robots
     h_r = 25                 # Hälfte der Breite des Robots
     l_r = 50                 # Hälfte der Länge zwischen den Rädern des Robots
 
     # Zone 0
     x1 = -(l_c-(max(l_r, -x_d)+ x_d))
     y1 = -(h_c-(max(h_r, -y_d)+ y_d))
-    x2 = (l_c-(max(l_r, x_d)+ x_d))
-    y2 = (h_c-(max(h_r, y_d)+ y_d))
+    x2 = l_c-max(l_r, x_d)+ x_d
+    y2 = h_c-max(h_r, y_d)+ y_d
     z0 = [(x1,y1),(x2,y2)]
 
     # Zone 90
     x1 = -(l_c-(max(h_r, y_d)- y_d))
-    y2 = -(h_c-(max(l_r, -x_d)+ x_d))
-    x2 = (l_c-(max(h_r, -y_d)- y_d))
-    y2 = (h_c-(max(l_r, x_d)+ x_d))
+    y1 = -(h_c-(max(l_r, -x_d)+ x_d))
+    x2 = l_c-max(h_r, -y_d)- y_d
+    y2 = h_c-max(l_r, x_d)+ x_d
     z90 = [(x1,y1),(x2,y2)]
 
     # Zone 180
     x1 = -(l_c-(max(l_r, x_d)- x_d))
     y1 = -(h_c-(max(h_r, y_d)- y_d))
-    x2 = (l_c-(max(l_r, -x_d)- x_d))   # Hier ist ein Fehler, da x2 größer als 100 ist und unsere Plate nur 100 breit ist. Somit ist diese Zone außerhalb der Plate.
-    y2 = (h_c-(max(h_r, -y_d)- y_d))
+    x2 = l_c-max(l_r, -x_d)- x_d    # Hier ist ein Fehler, da x2 größer als 100 ist und unsere Plate nur 100 breit ist. Somit ist diese Zone außerhalb der Plate.
+    y2 = h_c-max(h_r, -y_d)- y_d
     z180 = [(x1,y1),(x2,y2)]
 
     # Zone 270
     x1 = -(l_c-(max(h_r, -y_d)+ y_d))
     y1 = -(h_c-(max(l_r, x_d)- x_d))
-    x2 = (l_c-(max(h_r, y_d)+ y_d))
-    y2 = (h_c-(max(l_r, -x_d)- x_d))
+    x2 = l_c-max(h_r, y_d)+ y_d
+    y2 = h_c-max(l_r, -x_d)- x_d
     z270 = [(x1,y1),(x2,y2)]
 
     return z0, z90, z180, z270
@@ -585,37 +588,70 @@ if __name__ == '__main__':
         exit()
 
 
-    # make from the filled hullwith border and corner only the contour (finished_hull)
-    hull_finished, img_finished_hull = get_hulls(image)
+    # Get the contours and a black Image with the contours drawn on it
+    grouped_contours, image_contours = get_grouped_contours(image, min_area=600)
 
+    # Make the first hull closed
+    grouped_hulls, image_hulls = make_first_hull_closed(grouped_contours, image_contours)
 
-    # make the working zones
-    #z0, z90, z180, z270 = make_working_zones(image)
+    # Connect the hull to the border of the image
+    grouped_hulls_border, image_hulls_border = make_hull_connected_to_border(grouped_hulls, image_hulls)
 
+    # Fill in the corners of the hulls
+    grouped_hulls_edges, image_hulls_corner = fill_corners(grouped_hulls_border, image_hulls_border)
 
-    # make fake working zones
+    # Extract the finished hull
+    grouped_polynones_finished, image_finished_polynome = extract_finished_polynomes(image_hulls_corner)
+
+    # Claculate the working zones like in the paper
+    z0, z90, z180, z270 = make_working_zones(image_finished_polynome)
+    working_zones = [z0, z90, z180, z270]
+
+    #For now its a mock up
     h, w = image.shape[:2]
+    h, w = image.shape[0], image.shape[1]
     h, w = int(h/2), int(w/2)
     z0 = [(0,0),(w,h)]
     z90 = [(0,0),(-w,-h)]
     z180 = [(0,0),(-w,h)]
     z270 = [(0,0),(w,-h)]
-    working_zones = [z0, z90, z180, z270]
+    working_zones_mockup = [z0, z90, z180, z270]
 
-    # make the hulls for each working zone
-    img_finished_hull2 = np.copy(img_finished_hull)
-        
-    hull_finished_working_zones1, img_finished_hull_working_zones1, img_list_zones1 = get_hulls(img_finished_hull2, working_zones, min_area = 50)
+    #working_zones = working_zones_mockup
+    print(working_zones)
 
+    for i, zone in enumerate(working_zones):
+        print("zone: ", i)
+        print(zone)
+        x1, y1 = zone[0]
+        x2, y2 = zone[1]
+
+        x1 = x1 + w
+        y1 = y1 + h
+        x2 = x2 + w
+        y2 = y2 + h
+
+        print("x1, y1: ", x1, y1)
+        print("x2, y2: ", x2, y2)
+
+    # Define the threshold for the detail of the polygone
+    threshold_detail_polygone = 0.005
+
+    # extract the hulls of each working zone
+    hull_finished_working_zones, img_finished_hull_working_zones, img_list_zones, images_iterations = \
+    get_hulls(image_hulls_corner, working_zones, min_area = 10, threshold_detail_polygone=threshold_detail_polygone)
+
+    kernel = [(20,1),(20,1),(1,20),(1,20)]
 
     # make the dilate of each polygone in each working zone
-    image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones = dilate_polygons(img_list_zones1)
+    image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones = \
+    dilate_polygons(img_list_zones,kernel , threshold_detail_polygone=threshold_detail_polygone)
 
     # make the trapezoids of each polygone in each working zone
     polygones_zones = get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image)
 
     # show the trapezoids
-    for polygone_groups, image_cropped_polygones in zip(polygones_zones,img_list_zones1):
+    for polygone_groups, image_cropped_polygones in zip(polygones_zones,img_list_zones):
         image5 = np.zeros_like(image_cropped_polygones)
         for polygone in polygone_groups:
             for trap in polygone:
@@ -631,7 +667,7 @@ if __name__ == '__main__':
     
     ### Open Points
     # Change how to connecto to the Border (Maybe Check for last and first point and connect them to the Border)
-    
+
     # !!! Check the Working zones
 
     # the dilation some times is bigger then the borders
@@ -649,18 +685,12 @@ if __name__ == '__main__':
     # decide if its better for better zone 
     # to divide the zone in two zones or more
     # or scan like in option 1
-    
 
     # so we need to check if the dilation is bigger then the orginal image
 
-
-
-
-    
+   
     # show the images
     cv2.imshow("image", image)
-    cv2.imshow("image with polygone for each working zone filtered first", img_finished_hull_working_zones1)
-
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
