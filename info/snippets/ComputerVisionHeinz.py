@@ -124,7 +124,7 @@ def dilate_image(image, kernel_size=(20, 1), iterations=2):
 
     return dilated_image
 
-def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone = 0.01):
+def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone = 0.01, acceleration_offset = 10, threshold_border = 20):
     """
     Finds and draws the convex hulls of regions of interest in an image.
 
@@ -149,7 +149,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
         hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
 
         # Connect the hull to the border of the image
-        hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)
+        hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull, threshold_border = 20)
 
         # Fill in the corners of the hull
         hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
@@ -163,10 +163,10 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
         for i, z in enumerate(working_zones):
             if i == 0:
                 # Crop the image to the current working zone
-                img_cropped, image_deleted = get_rectangle(image, z[0], z[1])
+                img_cropped, image_deleted = get_rectangle(image, z[0], z[1],acceleration_offset)
             else:
                 # Crop the image to the current working zone
-                img_cropped, image_deleted = get_rectangle(image_deleted, z[0], z[1])
+                img_cropped, image_deleted = get_rectangle(image_deleted, z[0], z[1], acceleration_offset)
 
             images_iterations.append(image_deleted)
 
@@ -177,7 +177,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
 
             # Connect the hull to the border of the image
-            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull)     #TODO: check why when the point is to close to the boarder it does not work
+            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull, threshold_border = threshold_border)     #TODO: check why when the point is to close to the boarder it does not work
                                                                                                             # vlt muss ich auch den alten algorithmus austauschen und auch wieder ein Dilation hinzufügen oder eb
                                                                                                             # diese checken letzter punkt in der liste bzw. weil ich aber ja nicht ob der letzte punkt immer der nähste an der aussen kannte ist      
 
@@ -203,15 +203,23 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             # Draw the hulls on the image with different colors for different working zones
             for hull in hull_finished:
                 if i == 0:
+                    x_start = x_start + acceleration_offset
+                    x_end = x_end - acceleration_offset
                     cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 0, 255), 2)
                     cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 1:
+                    x_start = x_start + acceleration_offset
+                    x_end = x_end - acceleration_offset
                     cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 0), 2)
                     cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 2:
+                    y_start = y_start + acceleration_offset
+                    y_end = y_end - acceleration_offset
                     cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (255, 0, 0), 2)
                     cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
                 elif i == 3:
+                    y_start = y_start + acceleration_offset
+                    y_end = y_end - acceleration_offset
                     cv2.drawContours(image[y_start:y_end, x_start:x_end], [hull], 0, (0, 255, 255), 2)
                     cv2.drawContours(image_black_cropped, [hull], 0, (255, 255, 255), 2)
 
@@ -221,13 +229,16 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
 
         return hull_group, image, images_cropped_polygones, images_iterations
 
-def get_rectangle(image, point1, point2):
+def get_rectangle(image, point1, point2,acceleration_offset=0, direction = 0):
     """
     Get a rectangle from the input image defined by point1 and point2.
     Args:
         image (numpy.ndarray): The input image as a NumPy array.
         point1 (tuple): The first point defining the top-left corner of the rectangle as (x, y) coordinates.
         point2 (tuple): The second point defining the bottom-right corner of the rectangle as (x, y) coordinates.
+        acceleration_offset (int): The offset to the acceleration point. Makes the Working area smaller.
+        direction (int): The direction of the rectangle. 0 = horizontal, 1 = vertical.
+
     Returns:
         numpy.ndarray: The cropped image within the rectangle.
         numpy.ndarray: Orginal image with a black mask over the cropped rectangle.
@@ -239,14 +250,30 @@ def get_rectangle(image, point1, point2):
     x1, y1 = cx + point1[0], cy + point1[1]
     x2, y2 = cx + point2[0], cy + point2[1]
     
-    # Ensure the points are sorted in ascending order
+    
+    # Ensure the points are sorted in ascending order and add the acceleration offset so the cropped working area is smaller
+    if direction == 0 or direction == 1:
+        x_start = min(x1, x2) + acceleration_offset
+        x_end = max(x1, x2) -  acceleration_offset
+        y_start = min(y1, y2)
+        y_end = max(y1, y2)
+    else:
+        x_start = min(x1, x2)
+        x_end = max(x1, x2)
+        y_start = min(y1, y2) + acceleration_offset
+        y_end = max(y1, y2) - acceleration_offset
+    
+
+    # Crop the image to the rectangle defined by the points
+    cropped_image = image[y_start:y_end, x_start:x_end]
+
+    # Ensure the points are sorted in ascending order dont mask the working area + acceleration offset
+    # just the working area so other working areas later could do that 
     x_start = min(x1, x2)
     x_end = max(x1, x2)
     y_start = min(y1, y2)
     y_end = max(y1, y2)
-    
-    # Crop the image to the rectangle defined by the points
-    cropped_image = image[y_start:y_end, x_start:x_end]
+
     mask = cv2.rectangle(image.copy(), (x_start, y_start), (x_end, y_end), (0,0,0), -1)
   
     return cropped_image, mask
@@ -328,7 +355,7 @@ def make_first_hull_closed(grouped_contours, image):
 
     return hull_group, img_hull
 
-def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
+def make_hull_connected_to_border(grouped_hulls, image, threshold_border=30):
     """
     Make the convex hulls connected to the image border and fill them.
 
@@ -366,16 +393,16 @@ def make_hull_connected_to_border(grouped_hulls, image, threshold=20):
                 x, y = vertex
                 x1, y1 = None, None
                 updated_edge3.append((x, y))
-                if x < threshold:
+                if x < threshold_border:
                     x = 0
                     x1 = 0
-                elif x >= image.shape[1] - threshold:
+                elif x >= image.shape[1] - threshold_border:
                     x = image.shape[1] - 1
                     x1 = image.shape[1] - 1
-                if y < threshold:
+                if y < threshold_border:
                     y = 0
                     y1 = 0
-                elif y >= image.shape[0] - threshold:
+                elif y >= image.shape[0] - threshold_border:
                     y = image.shape[0] - 1
                     y1 = image.shape[0] - 1
                 updated_edge.append((x, y))
@@ -595,7 +622,7 @@ if __name__ == '__main__':
     grouped_hulls, image_hulls = make_first_hull_closed(grouped_contours, image_contours)
 
     # Connect the hull to the border of the image
-    grouped_hulls_border, image_hulls_border = make_hull_connected_to_border(grouped_hulls, image_hulls)
+    grouped_hulls_border, image_hulls_border = make_hull_connected_to_border(grouped_hulls, image_hulls, threshold_border = 20)
 
     # Fill in the corners of the hulls
     grouped_hulls_edges, image_hulls_corner = fill_corners(grouped_hulls_border, image_hulls_border)
@@ -639,7 +666,7 @@ if __name__ == '__main__':
 
     # extract the hulls of each working zone
     hull_finished_working_zones, img_finished_hull_working_zones, img_list_zones, images_iterations = \
-    get_hulls(image_hulls_corner, working_zones, min_area = 10, threshold_detail_polygone=threshold_detail_polygone)
+    get_hulls(image_hulls_corner, working_zones, min_area = 10, threshold_detail_polygone=threshold_detail_polygone, threshold_border = 20)
 
     kernel = [(20,1),(20,1),(1,20),(1,20)]
 
