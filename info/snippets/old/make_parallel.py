@@ -56,7 +56,7 @@ cv2.line(image, point4, point1, (255, 0, 0), 2)
 # Find the first line
 line1 = (point1, point2)
 
-# Calculate the length of the first line   #TODO: get max side length
+# Calculate the length of the first line   
 line_length = get_distance(point1, point2) 
 
 # Calculate the number of parallel lines that can fit inside the trapezoid

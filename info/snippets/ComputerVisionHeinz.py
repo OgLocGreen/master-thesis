@@ -74,7 +74,7 @@ def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, im
 
     return polygones_zones
 
-def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)], threshold_detail_polygone = 0.01):
+def dilate_polygons(img_list, orientations=[(20,1),(20,1),(20,1),(20,1)], threshold_detail_polygone = 0.025):
     """
     This function takes in a list of images, dilates each image using the dilate_image function, and then extracts 
     polygons from the dilated image using the get_hulls function. The dilated image, grouped polygons, and polygon 
@@ -312,7 +312,7 @@ def get_grouped_contours(image, min_area=600):
         perimeter = cv2.arcLength(contour, True)
 
         # Approximate the contour to a closed contour with fewer corners
-        epsilon = 0.01 * perimeter
+        epsilon = threshold_detail_polygone * perimeter
         approx = cv2.approxPolyDP(contour, epsilon, True)
 
         # Calculate the area of the contour
@@ -512,7 +512,7 @@ def fill_corners(hull_goup_with_edge, image):
     # Return the output image and the updated convex hulls
     return new_group_all, img_hull_corner
 
-def extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = 0.01):
+def extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = 0.025):
     '''
     Extracts the finished convex hull from the input image with filled corners.
 

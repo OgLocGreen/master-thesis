@@ -6,6 +6,7 @@ def draw_trapezoid(image, points, color=(0, 255, 0), thickness=2):
     if len(points) != 4:
         raise ValueError("Trapezoid should have exactly four points.")
 
+    points = [[int(x), int(y)] for x, y in points]
     # Sort the points based on their y-coordinates
     sorted_points = sorted(points, key=lambda p: p[1])
 
@@ -32,29 +33,12 @@ image = np.zeros((600, 600, 3), dtype=np.uint8)
 
 # Define the trapezoid coordinates (in any order)
 trapezoid = [[150, 150], [350, 200], [100, 500], [400, 400]]
+#trapezoid = [[100, 100], [200, 100],[100, 200], [200, 200]]
 
-trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
 
-# Create a blank image
-image = np.zeros((500, 500, 3), dtype=np.uint8)
+trapezoid = [[179.468, 468.0], [179.468, 335.2288123481492], [189.331, 331.0], [189.331, 472.0052166307438]]
 
-# Define the coordinates of the point
-point = (250, 250)
 
-# Set the color of the point (in BGR format)
-color = (0, 0, 255)
-
-# Set the size of the point
-radius = 3
-
-for x,y in trapezoid:
-
-    # Draw the point on the image
-    cv2.circle(image, (x,y), radius, color, -1)
-# Show the image
-cv2.imshow("Trapezoid", image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
 # Draw the trapezoid and get the corner points
 top_left, top_right, bottom_left, bottom_right = draw_trapezoid(image, trapezoid)
