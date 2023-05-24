@@ -113,6 +113,27 @@ def change_order(array):
 
 def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
 
+    # Speed for each point
+    # 0 speeds inbetween middle points
+    # 1 speeds at the middle points
+
+    # Orientiation for each point
+
+    # [ [x,y],[orientiation(pose), speed, direction_speed]]
+    # [ [x=100,y],[orientiation(pose), speed, direction_speed]]
+
+
+
+    # Working zones
+    # Convex zones -> always because its easier
+
+
+    # Matlab code
+    # if Plate rectangular -> 4 workingzones
+    # if Plate diffrent wie have more workingzones
+    # 
+
+
     trapezoid = [[trapezoid[0], trapezoid[1]],
                     [trapezoid[2], trapezoid[3]],
                     [trapezoid[2], trapezoid[0]],
@@ -211,6 +232,11 @@ if __name__ == '__main__':
         cv2.circle(img, points[1], 5, (0, 255, 100), -1)
         cv2.circle(img, points[2], 5, (0, 255, 100), -1)
         cv2.circle(img, points[-1], 5, (255, 255, 0), -1)
+
+
+    # Add 
+
+
 
     cv2.imshow("Trapezoid and Line", img)
     cv2.waitKey(0)
