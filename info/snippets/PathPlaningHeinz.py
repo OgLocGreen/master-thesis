@@ -1,42 +1,7 @@
 import cv2
 import numpy as np
-from sympy import Line, Point
+from sympy import Line, Point, Line2D
 import math
-
-def find_corners(polygon):
-    #    topmost,leftmost ───────────►xxxxxxxxxx◄────────── topmost,rightmost
-    #                              xxxx         xx
-    #    leftmost,topmost ──────►xxx             xx
-    #                            x                xx◄────── rightmost,topmost
-    #                            x                 x
-    # leftmost,bottommost ──────►xx                x
-    #                             xx              xx◄────── rightmost,bottommost
-    #                              x             xx
-    # bottommost,leftmost ────────►xxxxxxxxxxxxxxx◄──────── bottommost,rightmost
-
-    # topmost is minimum Y
-    # leftmost is minimum X
-    # rightmost is maximum X, or minimum -X
-    # bottommost is maximum Y, or minimum -Y
-    # X is `pt[0][0]`, Y is `pt[0][1]`
-
-    # going clock-wise :
-    topmost_then_rightmost_point =    min(polygon, key=lambda pt: ( pt[1], -pt[0]))
-    rightmost_then_topmost_point =    min(polygon, key=lambda pt: (-pt[0],  pt[1]))
-    rightmost_then_bottommost_point = min(polygon, key=lambda pt: (-pt[0], -pt[1]))
-    bottommost_then_rightmost_point = min(polygon, key=lambda pt: (-pt[1], -pt[0]))
-    bottommost_then_leftmost_point =  min(polygon, key=lambda pt: (-pt[1],  pt[0]))
-    leftmost_then_bottommost_point =  min(polygon, key=lambda pt: ( pt[0], -pt[1]))
-    leftmost_then_topmost_point =     min(polygon, key=lambda pt: ( pt[0],  pt[1]))
-    topmost_then_leftmost_point =     min(polygon, key=lambda pt: ( pt[1],  pt[0]))
-
-    top_left = leftmost_then_topmost_point
-    top_right = rightmost_then_topmost_point
-    bottom_right = leftmost_then_bottommost_point
-    bottom_left = rightmost_then_bottommost_point
-
-    #return tuple(top_left), tuple(top_right), tuple(bottom_right), tuple(bottom_left)
-    return top_left, top_right, bottom_right, bottom_left
 
 def get_corner(points):
     # Ensure that we have exactly four points
@@ -68,20 +33,21 @@ def find_line_intersections(line_start, line_end, trapezoid):
         pt2 = Point(side[1][0], side[1][1])
         side_line = Line(pt1, pt2)
         intersection = side_line.intersection(line)
-        if intersection == []:
+        if intersection == [] or isinstance(intersection[0], Line2D):
             pass
-        try:
-            intersection_point = intersection[0].evalf()
-            x, y = intersection_point.x, intersection_point.y
-            if min(pt1.x, pt2.x) <= x <= max(pt1.x, pt2.x) and min(pt1.y, pt2.y) <= y <= max(pt1.y, pt2.y):
-                intersections.append((int(x), int(y)))
-        except IndexError:
-            pass
+        else:
+            try:
+                intersection_point = intersection[0].evalf()   
+                x, y = intersection_point.x, intersection_point.y
+                if min(pt1.x, pt2.x) <= x <= max(pt1.x, pt2.x) and min(pt1.y, pt2.y) <= y <= max(pt1.y, pt2.y):
+                    intersections.append((int(x), int(y)))
+            except IndexError:
+                pass
     return intersections
 
 
 
-def make_parallel_line(point1, point2, distance):
+def make_parallel_line(point1, point2, distance, direction):
     # Calculate the vector representing the given line
     vector = np.array(point2) - np.array(point1)
 
@@ -96,6 +62,14 @@ def make_parallel_line(point1, point2, distance):
     offset_vector = np.abs(offset_vector)
 
     # Calculate the coordinates of the points on the parallel line
+    if direction == "right":
+        offset_vector = offset_vector
+    elif direction == "up":
+        offset_vector = -offset_vector
+    elif direction == "left" or direction == "down":
+        offset_vector = offset_vector
+    else:
+        print("Error: Wrong direction given. Please use 'left', 'right', 'up' or 'down'.")
     parallel_point1 = tuple((np.array(point1) + offset_vector).astype(int))
     parallel_point2 = tuple((np.array(point2) + offset_vector).astype(int))
 
@@ -146,7 +120,7 @@ def change_order(array):
     return array
 
 
-def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
+def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, direction):
 
     # Speed for each point
     # 0 speeds inbetween middle points
@@ -177,8 +151,13 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
 
     # Define the line start and end points
     # TODO: Intetegieren von einer funktion die mir die richtung vorgibt welche seite als erstes benutzt werden soll.
-    line_start = top_left_point
-    line_end = bottom_left_point
+
+    if direction == "right":
+        line_start = top_left_point
+        line_end = bottom_left_point
+    elif direction == "down":
+        line_start = top_left_point
+        line_end = top_right_point
 
     
 
@@ -187,15 +166,10 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
 
     # Make the first line parallel to the original line
 
-    start_point, end_point = make_parallel_line(line_start, line_end, distance_a)
-    start_point, end_point = extend_line(start_point, end_point, sizing_factor)
+    start_point_parallel, end_point_parallel = make_parallel_line(line_start, line_end, distance_a, direction)
+    start_point_extended, end_point_extrended = extend_line(start_point_parallel, end_point_parallel, sizing_factor)
 
-
-
-
-
-
-
+    # Show the firt parallel line
     points = top_left_point, top_right_point, bottom_left_point, bottom_right_point
     img2 = np.zeros((500, 500, 3), dtype=np.uint8)
 
@@ -221,7 +195,7 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
 
     # Return the corner points
 
-    cv2.line(img2, start_point, end_point, (0, 255, 255), thickness)
+    cv2.line(img2, start_point_extended, end_point_extrended, (0, 255, 255), thickness)
 
 
     cv2.imshow("Trapezoid and Line", img2)
@@ -229,18 +203,51 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor):
     cv2.destroyAllWindows()
 
 
-
-
-
-
-    intersections = find_line_intersections(start_point, end_point, trapezoid)
+    intersections = find_line_intersections(start_point_extended, end_point_extrended, trapezoid)
     middle_points = interpolate_points(intersections[0], intersections[1], distance_b)
     path_points.append([intersections[0], middle_points[0], middle_points[1], intersections[1]])
 
     while True:
-        new_points = make_parallel_line(intersections[0], intersections[1], distance_a)
+        new_points = make_parallel_line(intersections[0], intersections[1], distance_a, direction )
         new_points_long = extend_line(new_points[0], new_points[1], sizing_factor)
+
+                        # Show the firt parallel line
+        points = top_left_point, top_right_point, bottom_left_point, bottom_right_point
+        img2 = np.zeros((500, 500, 3), dtype=np.uint8)
+
+
+            # Ensure that we have exactly four points
+        if len(points) != 4:
+            raise ValueError("Trapezoid should have exactly four points.")
+
+        points = [[int(x), int(y)] for x, y in points]
+        # Sort the points based on their y-coordinates
+        sorted_points = sorted(points, key=lambda p: p[1])
+
+        # Determine the top points and bottom points
+        top_points = sorted(sorted_points[:2], key=lambda p: p[0])
+        bottom_points = sorted(sorted_points[2:], key=lambda p: p[0])
+        color=(0, 255, 0)
+        thickness=1
+        # Draw the trapezoid edges
+        cv2.line(img2, tuple(top_points[0]), tuple(top_points[1]), color, thickness)
+        cv2.line(img2, tuple(top_points[1]), tuple(bottom_points[1]), color, thickness)
+        cv2.line(img2, tuple(bottom_points[1]), tuple(bottom_points[0]), color, thickness)
+        cv2.line(img2, tuple(bottom_points[0]), tuple(top_points[0]), color, thickness)
+
+        # Return the corner points
+
+        cv2.line(img2, new_points_long[0], new_points_long[1], (0, 255, 255), thickness)
+
+
+        cv2.imshow("Trapezoid and Line", img2)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
         new_intersections = find_line_intersections(new_points_long[0], new_points_long[1], trapezoid)
+
+
         if new_intersections == [] or new_intersections[0] == new_intersections[1]:
             break
         else:
@@ -263,7 +270,7 @@ if __name__ == '__main__':
 
     #trapezoid = [[339.479, 479.0], [339.479, 338.6995025896108], [345.339, 339.0], [345.339, 476.25573672783]]
     trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
-    trapezoid = [[179.468, 468.0], [179.468, 335.2288123481492], [189.331, 331.0], [189.331, 472.0052166307438]]
+    #trapezoid = [[179.468, 468.0], [179.468, 335.2288123481492], [189.331, 331.0], [189.331, 472.0052166307438]]
 
     #TODO: if the angle is to small btw. the area is to small to have the speed up what should we do?
     # just let this line out? or should he run it with a lower speed?
@@ -280,13 +287,17 @@ if __name__ == '__main__':
 
 
     # How fare the parralel line should be from the original line
-    distance_a = 2
+    distance_a = 20
 
     # How far the point should be for breaking and aceelerating
-    distance_b = 10
+    distance_b = 5
 
     # How much the line should be extended
-    sizing_factor = 0.25
+    sizing_factor = 0.8
+
+    # The direction the robot is going
+    direction = "right"
+
 
     # Draw the trapezoid, line, and intersections
     img = np.zeros((500, 500, 3), dtype=np.uint8)
@@ -308,7 +319,7 @@ if __name__ == '__main__':
 
 
 
-    path_points = generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor)
+    path_points = generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, direction)
 
 
     for i,points in enumerate(path_points):
