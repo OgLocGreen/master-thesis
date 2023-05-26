@@ -62,14 +62,17 @@ def make_parallel_line(point1, point2, distance, direction):
     offset_vector = np.abs(offset_vector)
 
     # Calculate the coordinates of the points on the parallel line
-    if direction == "right":
+
+    if direction == "left-right":
         offset_vector = offset_vector
-    elif direction == "up":
+    elif direction == "up-down":
         offset_vector = -offset_vector
-    elif direction == "left" or direction == "down":
+    elif direction == "right-left":
+        offset_vector = -offset_vector
+    elif direction == "down-up":
         offset_vector = offset_vector
-    else:
-        print("Error: Wrong direction given. Please use 'left', 'right', 'up' or 'down'.")
+
+
     parallel_point1 = tuple((np.array(point1) + offset_vector).astype(int))
     parallel_point2 = tuple((np.array(point2) + offset_vector).astype(int))
 
@@ -86,7 +89,7 @@ def extend_line(point1, point2, extension_percentage):
     extension_vector1 = (extension * vector) / np.linalg.norm(vector)
     extension_vector2 = -extension_vector1
 
-    # Calculate the extended points   #TODO: Why is the Start Point now more left then the end point?
+    # Calculate the extended points   #TODO: Why is the Start Point now more left then the end point? this works needs to be tested
     extended_point1 = tuple((np.array(point1) + extension_vector2).astype(int))
     extended_point2 = tuple((np.array(point2) + extension_vector1).astype(int))
 
@@ -121,21 +124,20 @@ def change_order(array):
 
 
 def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, direction):
-
-    # Speed for each point
-    # 0 speeds inbetween middle points
-    # 1 speeds at the middle points
-
-    # Orientiation for each point
-
-    # [ [x,y],[orientiation(pose), speed, direction_speed]]
-    # [ [x=100,y],[orientiation(pose), speed, direction_speed]]
+    # Depending the direction
+    # will start from the top
+    # makes a parralel line from the top_left and top_right point
+    # then extand the line for sizing_factor 
+    # we do this because it could be that the parralel line needs to be longer, can even be a lot longer
+    # then check if the line intersects with the trapezoid
+    # get this intersection point for the real pathline
+    # then calculate the middle points for breaking and acceloration
+    # do this aslong there are intersections are found
 
 
 
     # Working zones
     # Convex zones -> always because its easier
-
 
     # Matlab code
     # if Plate rectangular -> 4 workingzones
@@ -150,19 +152,24 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, di
 
 
     # Define the line start and end points
-    # TODO: Intetegieren von einer funktion die mir die richtung vorgibt welche seite als erstes benutzt werden soll.
-
-    if direction == "right":
+    if direction == "left-right":
         line_start = top_left_point
         line_end = bottom_left_point
-    elif direction == "down":
+    elif direction == "down-up":
         line_start = top_left_point
         line_end = top_right_point
+    elif direction == "right-left":
+        line_start = top_right_point
+        line_end = bottom_right_point
+    elif direction == "up-down":    
+        line_start = bottom_left_point
+        line_end = bottom_right_point
 
     
 
     # Array of Points for the path
     path_points = []
+    path_points_with_direction_speed = []
 
     # Make the first line parallel to the original line
 
@@ -204,6 +211,8 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, di
 
 
     intersections = find_line_intersections(start_point_extended, end_point_extrended, trapezoid)
+    if intersections == []:
+        raise ValueError("No Path could be Calculted, check parameterss")
     middle_points = interpolate_points(intersections[0], intersections[1], distance_b)
     path_points.append([intersections[0], middle_points[0], middle_points[1], intersections[1]])
 
@@ -211,7 +220,7 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, di
         new_points = make_parallel_line(intersections[0], intersections[1], distance_a, direction )
         new_points_long = extend_line(new_points[0], new_points[1], sizing_factor)
 
-                        # Show the firt parallel line
+        # Show the firt parallel line
         points = top_left_point, top_right_point, bottom_left_point, bottom_right_point
         img2 = np.zeros((500, 500, 3), dtype=np.uint8)
 
@@ -236,23 +245,41 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, di
         cv2.line(img2, tuple(bottom_points[0]), tuple(top_points[0]), color, thickness)
 
         # Return the corner points
-
         cv2.line(img2, new_points_long[0], new_points_long[1], (0, 255, 255), thickness)
-
-
         cv2.imshow("Trapezoid and Line", img2)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
-
         new_intersections = find_line_intersections(new_points_long[0], new_points_long[1], trapezoid)
 
-
-        if new_intersections == [] or new_intersections[0] == new_intersections[1]:
+        # Check if the intersection are two diffrent points if they are the same or there are non break
+        if new_intersections == [] or (new_intersections[0] == new_intersections[1] and len(new_intersections) == 2):
             break
-        else:
+        else: # if there are more then one intersection point check of the other is usable
+            if new_intersections[0] == new_intersections[1] and new_intersections[0] != new_intersections[2]:
+                new_intersections[1] = new_intersections[2] 
+            elif len(new_intersections) > 2 and new_intersections[0] != new_intersections[2]:
+                break
+            #if not just work a usual take the intersection and get the middle points
             new_middle_points = interpolate_points(new_intersections[0], new_intersections[1], distance_b)
+
+
+            #TODO: Add Speed and Speed direction
+            # Speed for each point
+            # 0 speeds inbetween middle points
+            # 1 speeds at the middle points
+
+            # Orientiation for each point
+
+            # [ [x,y],[orientiation(pose), speed, direction_speed]]
+            # [ [x=100,y],[orientiation(pose), speed, direction_speed]]
+
             path_points.append([new_intersections[0], new_middle_points[0], new_middle_points[1], new_intersections[1]])
+
+            # 
+
+            path_points_with_direction_speed.append(path_points[-1][0])
+            
             intersections[0], intersections[1] = new_intersections[0], new_intersections[1]
 
     path_points = change_order(path_points)
@@ -263,19 +290,23 @@ if __name__ == '__main__':
 
     # Define the trapezoid the sides
     # trapezoid = [top_left_point, top_right_point, bottom_left_point, bottom_right_point]
-
-    #trapezoid = [[100, 100], [200, 100],[100, 200], [200, 200]]
-
+    # Easy test
     #trapezoid = [[150, 150], [350, 200],[100, 500], [400, 400]]
 
     #trapezoid = [[339.479, 479.0], [339.479, 338.6995025896108], [345.339, 339.0], [345.339, 476.25573672783]]
-    trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
+    
     #trapezoid = [[179.468, 468.0], [179.468, 335.2288123481492], [189.331, 331.0], [189.331, 472.0052166307438]]
+
+
+    # Just works for Trapezoids
+    trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
+    # only does not work for left-right
+    # couse it does not find the right start point 
+
 
     #TODO: if the angle is to small btw. the area is to small to have the speed up what should we do?
     # just let this line out? or should he run it with a lower speed?
     # for now the points are wrong and will be out side of the trapezoid 
-
 
 
     # TODO: Why Trepezoid and not just a polygone?
@@ -287,7 +318,7 @@ if __name__ == '__main__':
 
 
     # How fare the parralel line should be from the original line
-    distance_a = 20
+    distance_a = 5
 
     # How far the point should be for breaking and aceelerating
     distance_b = 5
@@ -296,7 +327,8 @@ if __name__ == '__main__':
     sizing_factor = 0.8
 
     # The direction the robot is going
-    direction = "right"
+    # directions can be "up-down" or "down-up" or "left-right" or "right-left"
+    direction = "left-right"
 
 
     # Draw the trapezoid, line, and intersections

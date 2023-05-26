@@ -177,9 +177,9 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
 
             # Connect the hull to the border of the image
-            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull, threshold_border = threshold_border)     #TODO: check why when the point is to close to the boarder it does not work
-                                                                                                            # vlt muss ich auch den alten algorithmus austauschen und auch wieder ein Dilation hinzufügen oder eb
-                                                                                                            # diese checken letzter punkt in der liste bzw. weil ich aber ja nicht ob der letzte punkt immer der nähste an der aussen kannte ist      
+            hull_group_with_edge, img_hull_border = make_hull_connected_to_border(hull_group, img_hull, threshold_border = threshold_border)    # TODO: check why when the point is to close to the boarder it does not work
+                                                                                                                                                # vlt muss ich auch den alten algorithmus austauschen und auch wieder ein Dilation hinzufügen oder eb
+                                                                                                                                                # diese checken letzter punkt in der liste bzw. weil ich aber ja nicht ob der letzte punkt immer der nähste an der aussen kannte ist      
 
             # Fill in the corners of the hull
             hull_group_with_corner, img_hull_corner = fill_corners(hull_group_with_edge, img_hull_border)
