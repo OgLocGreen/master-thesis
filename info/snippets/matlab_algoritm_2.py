@@ -63,6 +63,7 @@ H_sherpaXL = 58 / 2
 
 Lr = int(L_sherpaXL)  # min(L_max, H_max)  # 80  # cm
 Hr = int(H_sherpaXL)  # min(L_max, H_max)  # sherpa = 58/2; 50  # cm
+
 # mascara del robot
 Imgr = np.ones((2 * Hr + 1, 2 * Lr + 1))
 
@@ -72,14 +73,8 @@ offsetdy = 0  # 0
 # Parametros de la herramienta
 Xd = Lr + offsetdx  # cm
 Yd = Hr + offsetdy  # cm
-# mascara de la herramienta
-"""
-max_Xd = abs(Xd) + 1
-max_Yd = abs(Yd) + 1
-Imgd = np.zeros((2 * max_Yd + 1, 2 * max_Xd + 1))
-Imgd[max_Yd - Yd, max_Xd + Xd] = 1
-"""
 
+# mascara de la herramienta
 Imgd = np.zeros((2 * abs(Yd) + 1, 2 * abs(Xd) + 1))
 Imgd[abs(Yd)-Yd , abs(Xd)+Xd ] = 1
 
@@ -98,15 +93,11 @@ plt.imshow(ImgDisp)
 # Rotacion de 180 grados
 C1, C2, C3, C4 = zonareparadaInterior(Img, Imgr, Imgd, 2)
 ImgDisp[(C4 == 1) & ((A4 + B4) == 0)] = 4
-
-
 plt.imshow(ImgDisp)
-
 
 # Rotacion de 270 grados
 D1, D2, D3, D4 = zonareparadaInterior(Img, Imgr, Imgd, 3)
 ImgDisp[(D4 ==1) & ((A4 + B4 + C4) == 0)] = 5
-
 plt.imshow(ImgDisp)
 
 
@@ -121,32 +112,39 @@ plt.axis([-350, 350, -200, 200])
 plt.axis('square')
 plt.axis('equal')
 # 0 grados
-plt.plot(
-    [-(Lc - (max(Lr, -Xd) + Xd)), Lc - max(Lr, Xd) + Xd, Lc - max(Lr, Xd) + Xd, -(Lc - (max(Lr, -Xd) + Xd)),
-     -(Lc - (max(Lr, -Xd) + Xd))],
-    [Hc - max(Hr, Yd) + Yd, Hc - max(Hr, Yd) + Yd, -(Hc - (max(Hr, -Yd) + Yd)), -(Hc - (max(Hr, -Yd) + Yd)),
-     Hc - max(Hr, Yd) + Yd],
-    'g-', linewidth=1.5)
+x = np.array([-(Lc - (max(Lr, -Xd) + Xd)), Lc - max(Lr, Xd) + Xd, Lc - max(Lr, Xd) + Xd, -(Lc - (max(Lr, -Xd) + Xd)), -(Lc - (max(Lr, -Xd) + Xd))])
+y = np.array([Hc - max(Hr, Yd) + Yd, Hc - max(Hr, Yd) + Yd, -(Hc - (max(Hr, -Yd) + Yd)), -(Hc - (max(Hr, -Yd) + Yd)), Hc - max(Hr, Yd) + Yd])
+x1, y1 = x[0], y[0]
+x2, y2 = x[2], y[2]
+z0 = [(x1,y1),(x2,y2)]
+plt.plot(x, y, 'g-', linewidth=1.5)
+
 # 90 grados
-plt.plot(
-    [-(Lc - (max(Hr, Yd) - Yd)), Lc - max(Hr, -Yd) - Yd, Lc - max(Hr, -Yd) - Yd, -(Lc - (max(Hr, Yd) - Yd)),
-     -(Lc - (max(Hr, Yd) - Yd))],
-    [Hc - max(Lr, Xd) + Xd, Hc - max(Lr, Xd) + Xd, -(Hc - (max(Lr, -Xd) + Xd)), -(Hc - (max(Lr, -Xd) + Xd)),
-     Hc - max(Lr, Xd) + Xd],
-    'r-', linewidth=1.5)
+x = np.array([-(Lc - (max(Hr, Yd) - Yd)), Lc - max(Hr, -Yd) - Yd, Lc - max(Hr, -Yd) - Yd, -(Lc - (max(Hr, Yd) - Yd)), -(Lc - (max(Hr, Yd) - Yd))])
+y = np.array([Hc - max(Lr, Xd) + Xd, Hc - max(Lr, Xd) + Xd, -(Hc - (max(Lr, -Xd) + Xd)), -(Hc - (max(Lr, -Xd) + Xd)), Hc - max(Lr, Xd) + Xd])
+x1, y1 = x[0], y[0]
+x2, y2 = x[2], y[2]
+z90 = [(x1,y1),(x2,y2)]
+plt.plot(x, y, 'r-', linewidth=1.5)
+
 # 180 grados
-plt.plot(
-    [-(Lc - (max(Lr, Xd) - Xd)), Lc - max(Lr, -Xd) - Xd, Lc - max(Lr, -Xd) - Xd, -(Lc - (max(Lr, Xd) - Xd)),
-     -(Lc - (max(Lr, Xd) - Xd))],
-    [Hc - max(Hr, -Yd) - Yd, Hc - max(Hr, -Yd) - Yd, -(Hc - (max(Hr, Yd) - Yd)), -(Hc - (max(Hr, Yd) - Yd)),
-     Hc - max(Hr, -Yd) - Yd],
-    'c-', linewidth=1.5)
+x = np.array([-(Lc - (max(Lr, Xd) - Xd)), Lc - max(Lr, -Xd) - Xd, Lc - max(Lr, -Xd) - Xd, -(Lc - (max(Lr, Xd) - Xd)), -(Lc - (max(Lr, Xd) - Xd))])
+y = np.array([Hc - max(Hr, -Yd) - Yd, Hc - max(Hr, -Yd) - Yd, -(Hc - (max(Hr, Yd) - Yd)), -(Hc - (max(Hr, Yd) - Yd)), Hc - max(Hr, -Yd) - Yd])
+x1, y1 = x[0], y[0]
+x2, y2 = x[2], y[2]
+z180 = [(x1,y1),(x2,y2)]
+plt.plot(x, y, 'c-', linewidth=1.5)
+
 # 270 grados
-plt.plot(
-    [-(Lc - (max(Hr, -Yd) + Yd)), Lc - max(Hr, Yd) + Yd, Lc - max(Hr, Yd) + Yd, -(Lc - (max(Hr, -Yd) + Yd)),
-     -(Lc - (max(Hr, -Yd) + Yd))],
-    [Hc - max(Lr, -Xd) - Xd, Hc - max(Lr, -Xd) - Xd, -(Hc - (max(Lr, Xd) - Xd)), -(Hc - (max(Lr, Xd) - Xd)),
-     Hc - max(Lr, -Xd) - Xd],
-    'm-', linewidth=1.5)
+x = np.array([-(Lc - (max(Hr, -Yd) + Yd)), Lc - max(Hr, Yd) + Yd, Lc - max(Hr, Yd) + Yd, -(Lc - (max(Hr, -Yd) + Yd)), -(Lc - (max(Hr, -Yd) + Yd))])
+y = np.array([Hc - max(Lr, -Xd) - Xd, Hc - max(Lr, -Xd) - Xd, -(Hc - (max(Lr, Xd) - Xd)), -(Hc - (max(Lr, Xd) - Xd)), Hc - max(Lr, -Xd) - Xd])
+x1, y1 = x[0], y[0]
+x2, y2 = x[2], y[2]
+z270 = [(x1,y1),(x2,y2)]
+plt.plot(x, y, 'm-', linewidth=1.5)
+
 
 plt.show()
+
+
+

@@ -143,7 +143,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
     images_iterations = []
     if working_zones is None:
         # Get the contours and grouped contours in the cropped image
-        grouped_contours, img_contour = get_grouped_contours(image=image, min_area=min_area)
+        grouped_contours, img_contour = get_grouped_contours(image=image,threshold_detail_polygone=threshold_detail_polygone, min_area=min_area)
 
         # Make the first hull closed
         hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
@@ -171,7 +171,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             images_iterations.append(image_deleted)
 
             # Get the contours and grouped contours in the cropped image
-            grouped_contours, img_contour = get_grouped_contours(image=img_cropped, min_area=20)
+            grouped_contours, img_contour = get_grouped_contours(image=img_cropped,threshold_detail_polygone = threshold_detail_polygone, min_area=20)
 
             # Make the first hull closed
             hull_group, img_hull = make_first_hull_closed(grouped_contours, img_contour)
@@ -278,7 +278,7 @@ def get_rectangle(image, point1, point2,acceleration_offset=0, direction = 0):
   
     return cropped_image, mask
 
-def get_grouped_contours(image, min_area=600):
+def get_grouped_contours(image, threshold_detail_polygone, min_area=600):
     """
     Get grouped contours from an input image.
 
@@ -591,7 +591,7 @@ def make_working_zones(\
     # Zone 180
     x1 = -(l_c-(max(l_r, x_d)- x_d))
     y1 = -(h_c-(max(h_r, y_d)- y_d))
-    x2 = l_c-max(l_r, -x_d)- x_d    # Hier ist ein Fehler, da x2 größer als 100 ist und unsere Plate nur 100 breit ist. Somit ist diese Zone außerhalb der Plate.
+    x2 = l_c-max(l_r, -x_d)- x_d    
     y2 = h_c-max(h_r, -y_d)- y_d
     z180 = [(x1,y1),(x2,y2)]
 
@@ -613,10 +613,10 @@ if __name__ == '__main__':
     if image is None:
         print("Error: Failed to load the image.")
         exit()
-
+    threshold_detail_polygone = 0.005
 
     # Get the contours and a black Image with the contours drawn on it
-    grouped_contours, image_contours = get_grouped_contours(image, min_area=600)
+    grouped_contours, image_contours = get_grouped_contours(image,  threshold_detail_polygone, min_area=600,)
 
     # Make the first hull closed
     grouped_hulls, image_hulls = make_first_hull_closed(grouped_contours, image_contours)

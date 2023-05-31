@@ -349,8 +349,6 @@ if __name__ == '__main__':
     for side in trapezoid2:
         cv2.line(img, (int(side[0][0]), int(side[0][1])), (int(side[1][0]), int(side[1][1])), (0, 0, 255), 1)
 
-
-
     path_points = generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, direction)
 
 
