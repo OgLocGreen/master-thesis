@@ -89,7 +89,12 @@ def extend_line(point1, point2, extension_percentage):
     extension_vector1 = (extension * vector) / np.linalg.norm(vector)
     extension_vector2 = -extension_vector1
 
-    # Calculate the extended points   #TODO: Why is the Start Point now more left then the end point? this works needs to be tested
+    #TODO: 
+    # Old Problem: 
+    # Why is the Start Point more left then the end point?
+    # Fixed needs to be tested
+
+    # Calculate the extended points   
     extended_point1 = tuple((np.array(point1) + extension_vector2).astype(int))
     extended_point2 = tuple((np.array(point2) + extension_vector1).astype(int))
 
@@ -265,18 +270,26 @@ def generate_trapezoid_path(trapezoid, distance_a, distance_b, sizing_factor, di
 
 
             #TODO: Add Speed and Speed direction
+        
+            # Orientation for each point
+            # [int(x),int(y), int(z=0) int(w)]
+            # is always the same couse we dont want to change the orientation
+            # Orientation is depending on the Workingzone
+
             # Speed for each point
+            # int
             # 0 speeds inbetween middle points
             # 1 speeds at the middle points
 
-            # Orientiation for each point
+            # Speed direction for each point
+            # [int(x),int(y),int(z=0)]
+            # calculate from last point to current point
+            # or claculate form last point to current point
 
             # [ [x,y],[orientiation(pose), speed, direction_speed]]
             # [ [x=100,y],[orientiation(pose), speed, direction_speed]]
 
             path_points.append([new_intersections[0], new_middle_points[0], new_middle_points[1], new_intersections[1]])
-
-            # 
 
             path_points_with_direction_speed.append(path_points[-1][0])
             
@@ -291,7 +304,7 @@ if __name__ == '__main__':
     # Define the trapezoid the sides
     # trapezoid = [top_left_point, top_right_point, bottom_left_point, bottom_right_point]
     # Easy test
-    #trapezoid = [[150, 150], [350, 200],[100, 500], [400, 400]]
+    trapezoid = [[150, 150], [350, 200],[100, 500], [400, 400]]
 
     #trapezoid = [[339.479, 479.0], [339.479, 338.6995025896108], [345.339, 339.0], [345.339, 476.25573672783]]
     
@@ -299,23 +312,25 @@ if __name__ == '__main__':
 
 
     # Just works for Trapezoids
-    trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
+    #trapezoid = [[100, 100],[250, 100], [190, 150], [200, 200]]
     # only does not work for left-right
     # couse it does not find the right start point 
 
 
-    #TODO: if the angle is to small btw. the area is to small to have the speed up what should we do?
+    #FIXME: if the angle is to small btw. the area is to small to have the speed up what should we do?
     # just let this line out? or should he run it with a lower speed?
-    # for now the points are wrong and will be out side of the trapezoid 
+    # for now the points are wrong and will be out side of the trapezoid
+    # FIX: the new areas should be better all areas are possible to cover
 
 
-    # TODO: Why Trepezoid and not just a polygone?
+    # FIXME: Why Trepezoid and not just a polygone?
     # with the Workinzone i know whiche direction the robot goes
     # so i can just get the most left point and then start making lines from there
     # and get the intersections with the polygone
     # because the trapzoids are realy small and the speeding up and breaking would make sometimes no sense
     # and problems couse it would be to small
-
+    # FIX: its better to do the hole polygones, we used the trapezoids becuase of luker in the middle
+    
 
     # How fare the parralel line should be from the original line
     distance_a = 5
@@ -328,7 +343,7 @@ if __name__ == '__main__':
 
     # The direction the robot is going
     # directions can be "up-down" or "down-up" or "left-right" or "right-left"
-    direction = "left-right"
+    direction = "right-left"
 
 
     # Draw the trapezoid, line, and intersections

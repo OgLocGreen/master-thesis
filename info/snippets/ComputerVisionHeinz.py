@@ -1,12 +1,12 @@
 import cv2
 import numpy as np
-import array
-
 import seidel as sd
 import matplotlib.pyplot as plt
-from descartes import PolygonPatch
-from shapely.geometry import  Polygon
+from scipy.ndimage import rotate
+from scipy.ndimage.morphology import binary_dilation
+from scipy.ndimage import binary_erosion
 
+from info.snippets.matlab_algoritm_func_2_flascher import make_working_zones
 
 
 def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image):
@@ -124,7 +124,7 @@ def dilate_image(image, kernel_size=(20, 1), iterations=2):
 
     return dilated_image
 
-def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone = 0.01, acceleration_offset = 10, threshold_border = 20):
+def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone = 0.01, acceleration_offset = 0, threshold_border = 20):
     """
     Finds and draws the convex hulls of regions of interest in an image.
 
@@ -275,7 +275,13 @@ def get_rectangle(image, point1, point2,acceleration_offset=0, direction = 0):
     y_end = max(y1, y2)
 
     mask = cv2.rectangle(image.copy(), (x_start, y_start), (x_end, y_end), (0,0,0), -1)
-  
+    
+    cv2.imshow("mask", mask)
+    cv2.imshow("cropped_image", cropped_image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
     return cropped_image, mask
 
 def get_grouped_contours(image, threshold_detail_polygone, min_area=600):
@@ -551,7 +557,7 @@ def extract_finished_polynomes(img_hull_corner, threshold_detail_polygone = 0.02
 
     return polys, img_finished_hull
 
-def make_working_zones(\
+def make_working_zones_old(\
         image, h_c = int(591/2), l_c = int(1654/2), y_d = 30, x_d = 55, h_r = 25, l_r = 50):
     '''
     Creates working zones based on the input image dimensions and specified parameters.
@@ -631,7 +637,7 @@ if __name__ == '__main__':
     grouped_polynones_finished, image_finished_polynome = extract_finished_polynomes(image_hulls_corner)
 
     # Claculate the working zones like in the paper
-    z0, z90, z180, z270 = make_working_zones(image_finished_polynome)
+    z0, z90, z180, z270 = make_working_zones(image=image_finished_polynome)
     working_zones = [z0, z90, z180, z270]
 
     #For now its a mock up
@@ -693,6 +699,7 @@ if __name__ == '__main__':
 
     
     ### Open Points
+    # FIXME: old idears check at the end of master thesis
     # Change how to connecto to the Border (Maybe Check for last and first point and connect them to the Border)
 
     # !!! Check the Working zones
