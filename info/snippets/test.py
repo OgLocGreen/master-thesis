@@ -36,12 +36,17 @@ def toolFootprint(t_y, t_x, L_T, alpha_T):
     T_off = np.zeros((2*int(t_y)+1, 2*int(t_x)+1), dtype=np.uint8)
     T_off[0, 2*int(t_x)] = 1
 
-    # Define shape of the footprint
-    T_rct = cv2.getStructuringElement(cv2.MORPH_RECT, (L_T, 1))
-    T_rct = cv2.rotate(T_rct, alpha_T)
+    # Create a line-shaped structuring element
+    # Create a rotated line-shaped structuring element
+    T_rct = cv2.getRotationMatrix2D((0, 0), alpha_T, 1)
+    T_rct = cv2.warpAffine(np.ones((1, L_T), dtype=np.uint8), T_rct, (L_T, 1))
 
-    # Translate the footprint based on the position of its center
-    T_roff = cv2.dilate(T_off, T_rct)
+
+    # Perform dilation on T_off using T_rct's neighborhood shape
+    dilated = cv2.dilate(T_off, T_rct, iterations=1)
+
+    # Create the structuring element T_roff based on the dilated result
+    T_roff = cv2.getStructuringElement(cv2.MORPH_RECT, dilated.shape)
 
     return T_roff
 
@@ -115,42 +120,103 @@ def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     if brakeDistance is None:
         brakeDistance = 0
 
-    # Rotate the robot footprint without considering the braking distance
-    Rfpb0 = rotate(R_rct, robotPose, mode='constant')
+    # Calculate RFpb0
+    center = (R_rct.shape[1]/ 2, R_rct.shape[0]/ 2) 
+    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
+    # Calculate the new image size
+    cos_theta = np.abs(rotation_matrix[0, 0])
+    sin_theta = np.abs(rotation_matrix[0, 1])
+    new_width = int((R_rct.shape[1] * cos_theta) + (R_rct.shape[0] * sin_theta))
+    new_height = int((R_rct.shape[1] * sin_theta) + (R_rct.shape[0] * cos_theta))
+    # Adjust the translation component of the matrix to center the rotated image
+    rotation_matrix[0, 2] += (new_width / 2) - center[0]
+    rotation_matrix[1, 2] += (new_height / 2) - center[1]
+    # Rotate the robot footprint in X direction by the specified robotPose angle
+    Rfpb0 = cv2.warpAffine(R_rct.astype(np.uint8), rotation_matrix, (new_width, new_height))
 
-    # Create a binary structuring element for dilation
-    structuring_element = [[0, 1, 0]]
-
-    # Dilate the robot footprint in the X direction by the amount specified in brakeDistance
-    #Rfp = binary_dilation(R_rct, structure=structuring_element, iterations=brakeDistance)
-    Rfp = cv2.dilate(np.uint8(R_rct), np.uint8(structuring_element), iterations=brakeDistance)
+    # Calculate Rfp
+    # first dilate
+    # then rotate
+    # FIXME: This could be wrong because it can not dilate more because of the Picture size
+    # Dilate the robot footprint in X direction by the specified breakDistance
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2 * brakeDistance + 1, 1))
+    Rfp = cv2.dilate(R_rct.astype(np.uint8), kernel)
 
     # Rotate the resulting footprint
-    Rfp = rotate(Rfp, robotPose, mode='constant')
+    center = (Rfp.shape[1]/ 2, Rfp.shape[0]/ 2) 
+    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
+
+    # Calculate the new image size
+    cos_theta = np.abs(rotation_matrix[0, 0])
+    sin_theta = np.abs(rotation_matrix[0, 1])
+    new_width = int((Rfp.shape[1] * cos_theta) + (Rfp.shape[0] * sin_theta))
+    new_height = int((Rfp.shape[1] * sin_theta) + (Rfp.shape[0] * cos_theta))
+
+    # Adjust the translation component of the matrix to center the rotated image
+    rotation_matrix[0, 2] += (new_width / 2) - center[0]
+    rotation_matrix[1, 2] += (new_height / 2) - center[1]
+
+    # Rotate the robot footprint in X direction by the specified robotPose angle
+    Rfp = cv2.warpAffine(Rfp.astype(np.uint8), rotation_matrix, (new_width, new_height))
+
+    # Calculate Tfp
+    # Rotate the resulting footprint
+    center = (T_roff.shape[1]/ 2, T_roff.shape[0]/ 2) 
+    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
+
+    # Calculate the new image size
+    cos_theta = np.abs(rotation_matrix[0, 0])
+    sin_theta = np.abs(rotation_matrix[0, 1])
+    new_width = int((T_roff.shape[1] * cos_theta) + (T_roff.shape[0] * sin_theta))
+    new_height = int((T_roff.shape[1] * sin_theta) + (T_roff.shape[0] * cos_theta))
+
+    # Adjust the translation component of the matrix to center the rotated image
+    rotation_matrix[0, 2] += (new_width / 2) - center[0]
+    rotation_matrix[1, 2] += (new_height / 2) - center[1]
 
     # Rotate the tool/sensor footprint
-    Tfp = rotate(T_roff, robotPose, mode='constant')
+    Tfp = cv2.warpAffine(T_roff.astype(np.uint8), rotation_matrix, (T_roff.shape[1], T_roff.shape[0]))
 
+
+    #TODO: check if this is correct
+    """
+    plt.imshow(R_rct.astype(np.uint8), cmap='gray')
+    plt.show()
+    # Display the array as an image
+    plt.imshow(Rfpb0, cmap='gray')
+    plt.show()
+    plt.imshow(Rfp, cmap='gray')
+    plt.show()
+    plt.imshow(Tfp, cmap='gray')
+    plt.show()
+    """
     return Rfp, Tfp, Rfpb0
 
-def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):
+def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):  
     # Compute RTfpb0
-    RTfpb0 = rotateRobot(R_rct, T_roff, robotPose, brakeDistance)
+    Rfp, Tfp, RTfpb0 = rotateRobot(R_rct, T_roff, robotPose, brakeDistance)
 
-    # Convert the images to the appropriate data type
-    R_rct = R_rct.astype(np.uint8)
-    T_roff = T_roff.astype(np.uint8)
+    # Convert the structuring elements to binary images
+    #R_rct_binary = np.array(R_rct, dtype=np.uint8)
+    #T_roff_binary = np.array(T_roff, dtype=np.uint8)
 
-    # Resize the images to have the same shape
-    R_rct_resized = cv2.resize(R_rct, T_roff.shape[::-1])
-    T_roff_resized = T_roff
+    # Perform the union of the binary images
+    R_rct = cv2.resize(R_rct.astype(np.uint8), (T_roff.shape[1], T_roff.shape[0]))
+    RTfp_binary = cv2.bitwise_or(R_rct.astype(np.uint8), T_roff.astype(np.uint8))
 
-    # Perform bitwise OR operation
-    RTfp = cv2.bitwise_or(R_rct_resized, T_roff_resized)
-    se = np.ones((2 * brakeDistance + 1, 1))
-    RTfp = morphology.binary_dilation(RTfp, se)
+    # Create a new structuring element RTfp based on the binary union result
+    RTfp = cv2.getStructuringElement(cv2.MORPH_RECT, RTfp_binary.shape)
 
-    # Compute Tfp
+    line_structuring_element = cv2.getStructuringElement(cv2.MORPH_RECT, (1, brakeDistance))
+
+
+    # Perform dilation on RTfp.Neighborhood using the line-shaped structuring element
+    dilated_neighborhood = cv2.dilate(RTfp.astype(np.uint8), line_structuring_element, iterations=1)
+
+    # Create the structuring element RTfp based on the dilated result
+    RTfp = cv2.getStructuringElement(cv2.MORPH_RECT, dilated_neighborhood.shape)
+
+
     RTfp, Tfp, _ = rotateRobot(RTfp, T_roff, robotPose)
 
     return RTfp, Tfp, RTfpb0
@@ -225,105 +291,6 @@ def computeCurrentCost2(accessibility, mask):
     return c
 
 
-def drawSchematic_bak(P, A_0, A, Rfp, Tfp, Rbfp=None):
-    # Extract boundaries
-    robot = find_contours(Rfp)
-    rc = np.mean(robot, axis=0)
-    robot = robot - rc
-    plate = find_contours(P, 0.5)[0]
-    A_0edge = find_contours(A_0, 0.5)[0]
-
-    extrema = regionprops(A_0)["extrema"]
-    extrema = np.unique(extrema[:, [1, 0]], axis=0)
-
-    A_edge = find_contours(A, 0.5)[0]
-    rt, ct = np.where(Tfp.Neighborhood)
-
-    rt = rt - np.ceil(Tfp.Neighborhood.shape[0] / 2)
-    ct = ct - np.ceil(Tfp.Neighborhood.shape[1] / 2)
-
-    # Plotting
-    plt.figure()
-    plt.plot(plate[:, 1], plate[:, 0])
-    plt.gca().invert_yaxis()
-    plt.axis("equal")
-    plt.hold(True)
-    plt.plot(A_0edge[:, 1], A_0edge[:, 0], 'm--')
-    plt.plot(A_edge[:, 1], A_edge[:, 0], 'k-.')
-
-    plt.plot(robot[:, 1] + extrema[0, 1], robot[:, 0] + extrema[0, 0], 'g')
-    plt.plot(ct + extrema[0, 1], rt + extrema[0, 0], 'kx')
-    plt.plot(extrema[0, 1], extrema[0, 0], 'go')
-
-    for k in range(1, extrema.shape[0]):
-        plt.plot(robot[:, 1] + extrema[k, 1], robot[:, 0] + extrema[k, 0], 'g')
-        plt.plot(ct + extrema[k, 1], rt + extrema[k, 0], 'ks')
-        plt.plot(extrema[k, 1], extrema[k, 0], 'go')
-
-    if Rbfp is not None:
-        robotb = find_contours(Rbfp.Neighborhood, 0.5)
-        rcb = np.array(Rbfp.Neighborhood.shape) / 2
-        for k in range(extrema.shape[0]):
-            for l in range(len(robotb)):
-                shape = robotb[l] - rcb
-                plt.plot(shape[:, 1] + extrema[k, 1], shape[:, 0] + extrema[k, 0], 'g--')
-
-    plt.legend(["plate", "Robot safe area", "Inspected area", "robot", "tool/Sensor"])
-    plt.hold(False)
-    plt.show()
-
-def drawSchematic_bak(P, A_0, A, Rfp, Tfp, Rbfp=None):
-    cv2.imshow("P", Rfp.astype(np.uint8) * 255)
-
-    robot, _ = cv2.findContours(Rfp.astype(np.uint8)*255, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    robot = robot[0]
-    rc = np.mean(robot, axis=0)
-    robot = robot - rc
-
-    plate, _ = cv2.findContours(P.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    plate = plate[0]
-
-    A_0edge, _ = cv2.findContours(A_0.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    A_0edge = A_0edge[0]
-
-    extrema = cv2.findContours(A_0.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
-    extrema = np.unique(extrema.reshape(-1, 2)[:, ::-1], axis=0)
-
-    A_edge, _ = cv2.findContours(A.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    A_edge = A_edge[0]
-
-    rt, ct = np.where(Tfp.Neighborhood)
-    rt = rt - int(Tfp.Neighborhood.shape[0] / 2)
-    ct = ct - int(Tfp.Neighborhood.shape[1] / 2)
-
-    plt.plot(plate[:, :, 1], plate[:, :, 0])
-    plt.gca().invert_yaxis()
-    plt.axis('equal')
-    plt.hold(True)
-    plt.plot(A_0edge[:, :, 1], A_0edge[:, :, 0], 'm--')
-    plt.plot(A_edge[:, :, 1], A_edge[:, :, 0], 'k-.')
-    plt.plot(robot[:, :, 1] + extrema[0, 1], robot[:, :, 0] + extrema[0, 0], 'g')
-    plt.plot(ct + extrema[0, 1], rt + extrema[0, 0], 'kx')
-    plt.plot(extrema[0, 1], extrema[0, 0], 'go')
-
-    for k in range(1, extrema.shape[0]):
-        plt.plot(robot[:, :, 1] + extrema[k, 1], robot[:, :, 0] + extrema[k, 0], 'g')
-        plt.plot(ct + extrema[k, 1], rt + extrema[k, 0], 'ks')
-        plt.plot(extrema[k, 1], extrema[k, 0], 'go')
-
-    if Rbfp is not None:
-        robotb, _ = cv2.findContours(Rbfp.Neighborhood.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        rcb = np.array(Rbfp.Neighborhood.shape) / 2
-        for k in range(extrema.shape[0]):
-            for l in range(len(robotb)):
-                shape = robotb[l] - rcb
-                plt.plot(shape[:, :, 1] + extrema[k, 1], shape[:, :, 0] + extrema[k, 0], 'g--')
-
-    plt.legend(["plate", "Robot safe area", "Inspected area", "robot", "tool/Sensor"])
-    plt.hold(False)
-    plt.show()
-
-
 def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     new = Rfp.astype(np.uint8)
     cv2.imshow("new_255", new)
@@ -357,31 +324,22 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
 
     plt.gca().invert_yaxis()
     plt.axis('equal')
-    plt.show()
-    points = A_0edge
-    # Reshape the points array to (N, 2)
-    points = points.reshape(-1, 2)
 
-    # Extract x and y coordinates from the points array
-    x = points[:, 0]
-    y = points[:, 1]
 
-    # Connect the last point with the first point
+    data = A_0edge
+    x = data[:, 0, 0]
+    y = data[:, 0, 1]
     x = np.append(x, x[0])
     y = np.append(y, y[0])
+    plt.plot(x, y, 'm--')
 
+    data = A_edge
+    x = data[:, 0, 0]
+    y = data[:, 0, 1]
+    x = np.append(x, x[0])
+    y = np.append(y, y[0])
+    plt.plot(x,y, 'k-.')
 
-    # Plot the lines between points
-    plt.plot(x, y, 'b-')
-
-    # Show the plot
-    plt.show()
-    
-    #TODO: do it like this above it should work
-
-
-    plt.plot(A_0edge[1], A_0edge[0], 'm--')
-    plt.plot(A_edge[1], A_edge[0], 'k-.')
     plt.plot(robot[1] + extrema[0, 1], robot[0] + extrema[0, 0], 'g')
     plt.plot(ct + extrema[0, 1], rt + extrema[0, 0], 'kx')
     plt.plot(extrema[0, 1], extrema[0, 0], 'go')
@@ -392,7 +350,7 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
         plt.plot(extrema[k, 1], extrema[k, 0], 'go')
 
     if Rbfp is not None:
-        _, robotb, _ = cv2.findContours(Rbfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        robotb, _ = cv2.findContours(Rbfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         rcb = np.array(Rbfp.shape) / 2
         for k in range(extrema.shape[0]):
             for l in range(len(robotb)):
@@ -400,8 +358,8 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
                 plt.plot(shape[1] + extrema[k, 1], shape[0] + extrema[k, 0], 'g--')
 
     plt.legend(["plate", "Robot safe area", "Inspected area", "robot", "tool/Sensor"])
-
     plt.show()
+    print("done")
 
 def strelUnion(S1, S2):
     S1 = S1.astype(bool)
@@ -517,7 +475,7 @@ if __name__ == "__main__":
 
     # Define sensor footprint size and offset
     L_T = 21  # 1 pixel = 1 cm
-    W_T = 1
+    W_T = 5
     alpha_T = 90  # In degrees
     t_x = np.ceil(L_R/2) + 21  # 11
     t_y = np.ceil(W_R/2) + 11  # 5
@@ -538,9 +496,19 @@ if __name__ == "__main__":
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-    #TODO: Till here it works
-
     drawSchematic(P, A, A_0, R_rct, T_roff)
+
+
+    # robot orientation in degrees
+    alpha_R = -30
+    Rfp, Tfp, Rfpb0 = rotateRobot(R_rct, T_roff, alpha_R)
+    A, A_0 = safeAreaRobot(P, Rfp, Tfp)
+    images = np.concatenate((P[:, :, np.newaxis], A_0[:, :, np.newaxis], A[:, :, np.newaxis]), axis=2)
+    cv2.imshow("Images", images * 255)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
 
 
     robotPose = 180
