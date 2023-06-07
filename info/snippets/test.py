@@ -7,6 +7,7 @@ from skimage.measure import regionprops
 
 from scipy.ndimage import morphology, rotate
 import matplotlib.pyplot as plt
+from scipy.ndimage import generate_binary_structure, binary_dilation
 
 
 def resizePlate(P, W_P, L_P, bs):
@@ -32,23 +33,101 @@ def robotFootprint(W_R, L_R):
     return R_rct
 
 def toolFootprint(t_y, t_x, L_T, alpha_T):
-    # Define sensor footprint center position
-    T_off = np.zeros((2*int(t_y)+1, 2*int(t_x)+1), dtype=np.uint8)
-    T_off[0, 2*int(t_x)] = 1
-
-    # Create a line-shaped structuring element
-    # Create a rotated line-shaped structuring element
-    T_rct = cv2.getRotationMatrix2D((0, 0), alpha_T, 1)
-    T_rct = cv2.warpAffine(np.ones((1, L_T), dtype=np.uint8), T_rct, (L_T, 1))
 
 
-    # Perform dilation on T_off using T_rct's neighborhood shape
-    dilated = cv2.dilate(T_off, T_rct, iterations=1)
+    # Step 1: Mark the position of the tool/sensor center
+    # This works for 90 degrees only
+    T_off = np.zeros((2 * int(t_y) + 1, 2 * int(t_x) + 1), dtype=np.uint8)
+    T_off[0, 2 * int(t_x)] = 1
+    line = np.ones((1, L_T), dtype=np.uint8)
+    line_reshaped = line
+    # This T_roff_1 only works for 90,180,270 degrees
+    # Reshape the line vector based on the angle
+    if alpha_T == 0:
+        line_reshaped = line.reshape(-1, 1)  # Keep it as a column vector
+    elif alpha_T == 90:
+        line_reshaped = line.reshape(1, -1)  # Keep it as a row vector
+    elif alpha_T == 180:
+        line_reshaped = np.flip(line).reshape(-1, 1)  # Flip and make it a column vector
+    elif alpha_T == 270:
+        line_reshaped = np.flip(line).reshape(1, -1)  # Flip and make it a row vector
+    T_roff_1 = cv2.dilate(T_off, line_reshaped, iterations=1)
 
-    # Create the structuring element T_roff based on the dilated result
-    T_roff = cv2.getStructuringElement(cv2.MORPH_RECT, dilated.shape)
 
-    return T_roff
+
+    # works for any angles but when 90 degrees does have a 0 at the first place
+    # FIXME: why is there a 0 in the first place (first row)? in the line_angle
+    # FIXME: also does not work for angle 180
+    # FIXME: also for angle > 90, the footprint miss a 1 in the first row
+
+
+    # Define the desired padding size
+    padding_size = int(L_T/2)
+
+    # Add padding to the image
+    T_off_padded = cv2.copyMakeBorder(T_off, padding_size, padding_size, padding_size, padding_size, cv2.BORDER_CONSTANT, value=0)
+
+    #make the line 
+    line = np.ones((1, L_T), dtype=np.uint8)
+    center = (line.shape[1]/ 2, line.shape[0]/ 2)
+    rotation_matrix=  cv2.getRotationMatrix2D(center, alpha_T, 1.0)
+    # Calculate the new image size
+    cos_theta = np.abs(rotation_matrix[0, 0])
+    sin_theta = np.abs(rotation_matrix[0, 1])
+    new_width = int((line.shape[1] * cos_theta) + (line.shape[0] * sin_theta))
+    new_height = int((line.shape[1] * sin_theta) + (line.shape[0] * cos_theta))
+    # Adjust the translation component of the matrix to center the rotated image
+    rotation_matrix[0, 2] += (new_width / 2) - center[0]
+    rotation_matrix[1, 2] += (new_height / 2) - center[1]
+    # Rotate the robot footprint in X direction by the specified robotPose angle
+    line_angle = cv2.warpAffine(line.astype(np.uint8), rotation_matrix, (new_width, new_height))
+    T_roff_2 = cv2.dilate(T_off_padded, line_angle, iterations=1)
+
+
+
+    # Trying to fix the problem with the 0 in the first row
+    if alpha_T == 90:
+        line_angle[0] = 1
+    T_roff_3 = cv2.dilate(T_off, line_angle, iterations=1)
+
+
+    #TODO: in matlab its 109x119 logical
+    # in python its (89, 119) T_roff_2
+    # the dilate is not working properly
+    # it only add its to the picture
+    # but it should make it bigger
+
+    # Fix: i need to padd it first
+    # so i make it bigger but i dont know on whiche side so i make it all bigger
+    # does it matter if the footprint is bigger?
+    # i mean there are just zeros
+    # this is t_roff_2
+
+
+
+    plt.subplot(1,4,1)
+    plt.imshow(T_off,  cmap='gray')
+    plt.title('T_off')
+
+    plt.subplot(1,4,2)
+    plt.imshow(T_roff_1)
+    plt.title('T_roff_1')
+
+    plt.subplot(1,4,3)
+    plt.imshow(T_roff_2)
+    plt.title('T_roff_2')
+
+    plt.subplot(1,4,4)
+    plt.imshow(T_roff_3)
+    plt.title('T_roff_3')
+
+    # Adjust the spacing between subplots
+    plt.tight_layout()
+
+    # Show the figure
+    plt.show()
+
+    return T_off, T_roff_1, T_roff_2, T_roff_3
 
 def AnalysisRegion(imageName, zoneNum):
     # Read the image and convert it to HSV color space
@@ -77,8 +156,16 @@ def safeAreaRobot(P, R_rct, T_roff):
     # and any other sensor/tool that may protrude from the robot. The origin is
     # placed at the robot centre.
     
+    plt.imshow(P, cmap='gray')
+    plt.title('P')
+    plt.show()
+    plt.imshow(R_rct, cmap='gray')
+    plt.title('R_rct')
+    plt.show()
+
     A_0 = cv2.erode(np.uint8(P), np.uint8(R_rct))
-    #A_0 = binary_erosion(P, structure=R_rct)    
+    plt.imshow(A_0, cmap='gray')
+    plt.show()   
 
     # Also compute the area covered by the tool/sensor when the robot stays
     # within A_0. It is computed as the dilation of A_0 by T_roff. T_roff is
@@ -86,6 +173,8 @@ def safeAreaRobot(P, R_rct, T_roff):
     # the centre of the robot.
     
     A = cv2.dilate(np.uint8(A_0), np.uint8(T_roff))
+    plt.imshow(A, cmap='gray')
+    plt.show()  
     #A = binary_dilation(A_0, structure=T_roff)
 
     return A, A_0
@@ -292,10 +381,7 @@ def computeCurrentCost2(accessibility, mask):
 
 
 def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
-    new = Rfp.astype(np.uint8)
-    cv2.imshow("new_255", new)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    plt.clf()
     robot , _ = cv2.findContours(Rfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     robot = robot[0]
 
@@ -319,8 +405,13 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     rt = rt - int(Tfp.shape[0] / 2)
     ct = ct - int(Tfp.shape[1] / 2)
 
-    #plt.plot(plate[:, :, 1], plate[:, :, 0])
-    plt.plot(plate[1], plate[0])
+
+    data = plate
+    x = data[:, 0, 0]
+    y = data[:, 0, 1]
+    x = np.append(x, x[0])
+    y = np.append(y, y[0])
+    plt.plot(x,y, 'b')
 
     plt.gca().invert_yaxis()
     plt.axis('equal')
@@ -436,9 +527,6 @@ if __name__ == "__main__":
     P = convex_hull_image(P)
 
     # Display the resulting image or perform further operations
-
-
-
     zonesName = "./info/snippets/chapaRectangEscaladaZonas.png"
 
     # Define bounding box dimensions (1 pixel = 1 cm)
@@ -480,7 +568,7 @@ if __name__ == "__main__":
     t_x = np.ceil(L_R/2) + 21  # 11
     t_y = np.ceil(W_R/2) + 11  # 5
 
-    T_roff = toolFootprint(t_y, t_x, L_T, alpha_T)
+    _, _ ,  _, T_roff = toolFootprint(t_y, t_x, L_T, alpha_T)
 
     cv2.imshow("Tool Footprint", T_roff)
     cv2.waitKey(0)
@@ -490,12 +578,16 @@ if __name__ == "__main__":
     # Call the safeAreaRobot function
     A, A_0 = safeAreaRobot(P, R_rct, T_roff)
 
-    # Display the images
-    images = np.concatenate((P[:, :, np.newaxis], A_0[:, :, np.newaxis], A[:, :, np.newaxis]), axis=2)
-    cv2.imshow("Images", images * 255)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
+    # Concatenate the arrays along the third dimension
+    combined = np.dstack((P, A_0, A))
+    # Convert the combined array to uint8 data type
+    combined = combined.astype(np.uint8)
+    # Scale the values by 255
+    scaled = combined * 255
+    # Display the image using Matplotlib
+    plt.imshow(scaled)
+    plt.show()
+    plt.clf()
     drawSchematic(P, A, A_0, R_rct, T_roff)
 
 
@@ -503,11 +595,16 @@ if __name__ == "__main__":
     alpha_R = -30
     Rfp, Tfp, Rfpb0 = rotateRobot(R_rct, T_roff, alpha_R)
     A, A_0 = safeAreaRobot(P, Rfp, Tfp)
-    images = np.concatenate((P[:, :, np.newaxis], A_0[:, :, np.newaxis], A[:, :, np.newaxis]), axis=2)
-    cv2.imshow("Images", images * 255)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
+    # Concatenate the arrays along the third dimension
+    combined = np.dstack((P, A_0, A))
+    # Convert the combined array to uint8 data type
+    combined = combined.astype(np.uint8)
+    # Scale the values by 255
+    scaled = combined * 255
+    # Display the image using Matplotlib
+    plt.imshow(scaled)
+    plt.show()
 
 
 
