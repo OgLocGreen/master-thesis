@@ -187,10 +187,5 @@ if __name__ == "__main__":
     perform_rotation_sizing(image, 45)
 
 
-    #TODO: Überprüfen ob die Struktuellen elemente gleich gemacht werden wie in matlab
-    #TODO: dann überprüfen welche der Funktionen wir am besten verweden
-    #TODO: dann die Funktionen in die test.py einbauen und noch mal überprüfen
-
-
     cv2.waitKey(0)
     cv2.destroyAllWindows()

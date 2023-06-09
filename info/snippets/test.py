@@ -301,12 +301,9 @@ def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     return Rfp, Tfp, Rfpb0
 
 def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):  
+
     # Compute RTfpb0
     Rfp, Tfp, RTfpb0 = rotateRobot(R_rct, T_roff, robotPose, brakeDistance)
-
-    # Convert the structuring elements to binary images
-    #R_rct_binary = np.array(R_rct, dtype=np.uint8)
-    #T_roff_binary = np.array(T_roff, dtype=np.uint8)
 
     # Perform the union of the binary images
     R_rct = cv2.resize(R_rct.astype(np.uint8), (T_roff.shape[1], T_roff.shape[0]))
@@ -326,7 +323,17 @@ def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):
 
 
     RTfp, Tfp, _ = rotateRobot(RTfp, T_roff, robotPose)
+    """
+    # Compute RTfpb0
+    Rfp, Tfp, RTfpb0 = rotateRobot(R_rct, T_roff, robotPose, brakeDistance)
 
+    #RTfp = strelUnion(R_rct, T_roff)
+    R_rct = cv2.resize(R_rct.astype(np.uint8), (T_roff.shape[1], T_roff.shape[0]))
+    RTfp = cv2.bitwise_or(R_rct.astype(np.uint8), T_roff.astype(np.uint8))
+    structuring_element_scipy = np.ones((2 * brakeDistance + 1, 1), dtype=np.uint8)
+    RTfp = binary_dilation(RTfp.astype(np.uint8), structuring_element_scipy)
+    RTfp, Tfp, Rfpb0 = rotateRobot(RTfp, T_roff, robotPose)
+    """ 
     return RTfp, Tfp, RTfpb0
 
 
@@ -496,7 +503,7 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     print("done")
 
 
-def strelUnion(S1, S2):
+def strelUnion_bak(S1, S2):
     m1, n1 = S1.shape
     m2, n2 = S2.shape
 
@@ -523,6 +530,24 @@ def strelUnion(S1, S2):
     #TODO: Check if the S_union is correct
     return S_union
 
+def strelUnion(array1, array2):
+    if array1.shape > array2.shape:
+        pass
+    elif array2.shape > array1.shape:
+        array1, array2 = array2, array1
+
+    # Calculate the starting position for placing the square in the middle
+    start_x = (array1.shape[0] - array2.shape[0]) // 2
+    start_y = (array1.shape[1] - array2.shape[1]) // 2
+
+    # Create an array with the square placed in the middle
+    expanded_array2 = np.zeros_like(array1, dtype=bool)
+    expanded_array2[start_x:start_x+array2.shape[0], start_y:start_y+array2.shape[1]] = True
+
+    # Perform element-wise logical OR operation
+    result = np.logical_or(array1, expanded_array2)
+    return result
+
 
 def paddedErosion(A, SE):
     m = np.ceil(SE.shape[0] / 2).astype(int)
@@ -530,8 +555,8 @@ def paddedErosion(A, SE):
 
     A = A.astype(bool)
     SE = SE.astype(bool)
-
-    I = binary_erosion(np.pad(A, ((m, m), (n, n))), SE)
+    A_padded = np.pad(A, ((m, m), (n, n)), mode='constant', constant_values=0)
+    I = binary_erosion(A_padded.astype(np.uint8), SE.astype(np.uint8))
     I = I[m:-m, n:-n]
     return I
 
@@ -684,23 +709,41 @@ if __name__ == "__main__":
     brakeDistance = 25
 
     RT_fp = strelUnion(R_rct, T_roff)
-
+    
     P_shape = P.shape
     length_angPose = len(angPose)
 
-    I_20 = np.zeros(P_shape + (length_angPose,), dtype=bool)
-    I_2 = np.zeros(P_shape + (length_angPose,), dtype=bool)
+    I_20 = np.zeros(P_shape + (length_angPose,), dtype=np.uint8)
+    I_2 = np.zeros(P_shape + (length_angPose,), dtype=np.uint8)
 
     for k in range(len(angPose)):
         RTfp, Tfp, RTfpb0 = rotateRobotTool(R_rct, T_roff, angPose[k], brakeDistance)
-        I_20[:, :, k] = binary_erosion(P, structure=RTfp)
+        """
+        I = RTfp.astype(np.uint8)*255
+        plt.imshow(I)
+        plt.show()
+        I = T_roff.astype(np.uint8)*255
+        plt.imshow(I)
+        plt.show()
+        """
+        I_20[:, :, k] = paddedErosion(P, RTfp)
         I_2[:, :, k] = binary_dilation(I_20[:, :, k], structure=Tfp)
 
     I = np.any(I_2, axis=2)
-    plt.imshow(I_2)
-    plt.show()  
+    #TODO: hier müsste was am Rand abgeschnitten sein ist es aber leider nicht
+    I = I.astype(np.uint8)*255
     plt.imshow(I)
-    #plt.plot(Pedge[1], Pedge[0], 'r--', linewidth=2)
-    plt.plot(Pedge[:, :, 0], Pedge[:, :, 1], 'r--', linewidth=2)
+    data = Pedge
+    x = data[:, 0, 0]
+    y = data[:, 0, 1]
+    x = np.append(x, x[0])
+    y = np.append(y, y[0])
+    plt.plot(x, y, 'r--', linewidth=2)
+    plt.show()
+
+
+    NI = P & (~I)
+    plt.imshow(NI)
+    plt.plot(x, y, 'r--', linewidth=2)
     plt.show()
     print("done")
