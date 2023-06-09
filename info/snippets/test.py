@@ -1,14 +1,12 @@
 import cv2
 import numpy as np
 from skimage.morphology import convex_hull_image
-from skimage.morphology import binary_erosion, binary_dilation
-from skimage.measure import find_contours
-from skimage.measure import regionprops
 
-from scipy.ndimage import morphology, rotate
+
 import matplotlib.pyplot as plt
-from scipy.ndimage import generate_binary_structure, binary_dilation
-
+from scipy.ndimage import  binary_dilation
+from scipy.ndimage import binary_erosion
+from scipy.ndimage import rotate
 
 def resizePlate(P, W_P, L_P, bs):
     # Get the bounding box
@@ -19,7 +17,7 @@ def resizePlate(P, W_P, L_P, bs):
     P = P[y:y+h, x:x+w]
 
     # Resize image
-    P = cv2.resize(P, (L_P, W_P))
+    P = cv2.resize(P.astype(np.uint8), (L_P, W_P))
 
     # Pad the resulting image
     P = cv2.copyMakeBorder(P, bs, bs, bs, bs, cv2.BORDER_CONSTANT, value=0)
@@ -155,33 +153,33 @@ def safeAreaRobot(P, R_rct, T_roff):
     # leave the area P due to safety reasons. R_rct includes the robot itself
     # and any other sensor/tool that may protrude from the robot. The origin is
     # placed at the robot centre.
-    
-    plt.imshow(P, cmap='gray')
-    plt.title('P')
-    plt.show()
-    plt.imshow(R_rct, cmap='gray')
-    plt.title('R_rct')
-    plt.show()
 
-    A_0 = cv2.erode(np.uint8(P), np.uint8(R_rct))
-    plt.imshow(A_0, cmap='gray')
-    plt.show()   
+    A_0 = binary_erosion(np.uint8(P), np.uint8(R_rct))
 
     # Also compute the area covered by the tool/sensor when the robot stays
     # within A_0. It is computed as the dilation of A_0 by T_roff. T_roff is
     # the footprint covered by the tool/sensor. The origin of this footprint is
     # the centre of the robot.
     
-    A = cv2.dilate(np.uint8(A_0), np.uint8(T_roff))
+    A = binary_dilation(np.uint8(A_0), np.uint8(T_roff))
+
+    """
+    plt.imshow(A_0, cmap='gray')
+    plt.title('A_0')
+    plt.show()   
     plt.imshow(A, cmap='gray')
+    plt.title('A')
+    plt.show()
+    plt.imshow(P, cmap='gray')
+    plt.title('P')
+    plt.show()
+    plt.imshow(R_rct, cmap='gray')
+    plt.title('R_rct')
     plt.show()  
-    #A = binary_dilation(A_0, structure=T_roff)
+    """
 
     return A, A_0
 
-
-from scipy.ndimage.morphology import binary_dilation
-from skimage.transform import rotate
 
 def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     # Compute robot and tool/sensor footprint when the robot is rotated alpha_R
@@ -205,7 +203,7 @@ def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     #        confinement region, rotated the same amount as the robot.
     # Rfpb0 -> robot footprint rotated, but without considering the braking
     #          distance
-
+    """
     if brakeDistance is None:
         brakeDistance = 0
 
@@ -266,19 +264,40 @@ def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     # Rotate the tool/sensor footprint
     Tfp = cv2.warpAffine(T_roff.astype(np.uint8), rotation_matrix, (T_roff.shape[1], T_roff.shape[0]))
 
+    """
+
+    if brakeDistance is None:
+        brakeDistance = 0
+
+    #Rotate
+    R_rct_roteted = rotate(R_rct.astype(np.uint8), robotPose, reshape=True)
+
+    # make a struct elemten out of it
+    Rfpb0 = R_rct_roteted
+
+    structuring_element_scipy = np.ones((2 * brakeDistance + 1, 1), dtype=np.uint8)
+    Rfp = binary_dilation(R_rct.astype(np.uint8), structuring_element_scipy)
+
+    Rfp = rotate(Rfp, robotPose, reshape=True)
+    
+    Tfp = rotate(T_roff.astype(np.uint8), robotPose, reshape=True)
 
     #TODO: check if this is correct
     """
     plt.imshow(R_rct.astype(np.uint8), cmap='gray')
+    plt.title("R_rct")
     plt.show()
-    # Display the array as an image
     plt.imshow(Rfpb0, cmap='gray')
+    plt.title("Rfpb0")
     plt.show()
     plt.imshow(Rfp, cmap='gray')
+    plt.title("Rfp")
     plt.show()
     plt.imshow(Tfp, cmap='gray')
+    plt.title("Tfp")
     plt.show()
     """
+
     return Rfp, Tfp, Rfpb0
 
 def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):  
@@ -384,9 +403,14 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     plt.clf()
     robot , _ = cv2.findContours(Rfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     robot = robot[0]
-
-
     rc = np.mean(robot, axis=0)
+    x = rc[0][0]
+    y = rc[0][1]
+    rc[0][0] = y 
+    rc[0][1] = x
+    #TODO: here the variable is not completly right
+    # there is still an offset 
+
     robot = robot - rc
 
     plate, _  = cv2.findContours(P.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -404,7 +428,22 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     rt, ct = np.where(Tfp)
     rt = rt - int(Tfp.shape[0] / 2)
     ct = ct - int(Tfp.shape[1] / 2)
+    #plate okay
+    #A_0edge okay
+    #A_edge okay
+    # extrams okay
 
+    # rt okay
+    # ct okay
+
+
+
+    # FIXME: Robot var looks not like in Matlab
+    # Matlab 277x2 
+    # Python 4,1,2
+    # thats because in matlab its each point and in matlab just the edges
+
+    #TODO: check if 
 
     data = plate
     x = data[:, 0, 0]
@@ -415,7 +454,7 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
 
     plt.gca().invert_yaxis()
     plt.axis('equal')
-
+    # Plate is okay starts in matlab 101,101 and in python 100,100 also its both times (501,901)
 
     data = A_0edge
     x = data[:, 0, 0]
@@ -431,14 +470,18 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     y = np.append(y, y[0])
     plt.plot(x,y, 'k-.')
 
-    plt.plot(robot[1] + extrema[0, 1], robot[0] + extrema[0, 0], 'g')
-    plt.plot(ct + extrema[0, 1], rt + extrema[0, 0], 'kx')
-    plt.plot(extrema[0, 1], extrema[0, 0], 'go')
-
-    for k in range(1, extrema.shape[0]):
-        plt.plot(robot[1] + extrema[k, 1], robot[0] + extrema[k, 0], 'g')
-        plt.plot(ct + extrema[k, 1], rt + extrema[k, 0], 'ks')
+    for k in range(0, extrema.shape[0]):
+        x = robot[:, 0, 1]+ extrema[k, 1]
+        y = robot[:, 0, 0]+ extrema[k, 0]
+        x = np.append(x, x[0])
+        y = np.append(y, y[0])
+        plt.plot(x,y, 'g')
+        plt.plot(extrema[k, 1] + ct, extrema[k, 0] + rt, 'ks')
+        
+        #FIXME: Works more or less but the lines have some offset
+        # i think its because of rounding problems
         plt.plot(extrema[k, 1], extrema[k, 0], 'go')
+
 
     if Rbfp is not None:
         robotb, _ = cv2.findContours(Rbfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -452,30 +495,33 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     plt.show()
     print("done")
 
-def strelUnion(S1, S2):
-    S1 = S1.astype(bool)
-    S2 = S2.astype(bool)
 
+def strelUnion(S1, S2):
     m1, n1 = S1.shape
     m2, n2 = S2.shape
 
     m = max(m1, m2)
     n = max(n1, n2)
 
-    # pad S1
+    # Pad S1
     if m1 < m:
-        S1 = np.pad(S1, ((m-m1)//2, 0))
+        pad_height = (m - m1) // 2
+        S1 = np.pad(S1, [(pad_height, pad_height), (0, 0)])
     if n1 < n:
-        S1 = np.pad(S1, ((0, 0), (n-n1)//2))
+        pad_width = (n - n1) // 2
+        S1 = np.pad(S1, [(0, 0), (pad_width, pad_width)])
 
-    # pad S2
+    # Pad S2
     if m2 < m:
-        S2 = np.pad(S2, ((m-m2)//2, 0))
+        pad_height = (m - m2) // 2
+        S2 = np.pad(S2, [(pad_height, pad_height), (0, 0)])
     if n2 < n:
-        S2 = np.pad(S2, ((0, 0), (n-n2)//2))
+        pad_width = (n - n2) // 2
+        S2 = np.pad(S2, [(0, 0), (pad_width, pad_width)])
 
-    S = np.logical_or(S1, S2)
-    return S
+    S_union = binary_erosion(S1.astype(np.uint8), S2.astype(np.uint8))
+    #TODO: Check if the S_union is correct
+    return S_union
 
 
 def paddedErosion(A, SE):
@@ -535,14 +581,14 @@ if __name__ == "__main__":
     bs = 100
 
     # Resize the plate
-    P_resized = cv2.resize(P.astype(np.uint8), (L_P, W_P))
+    P = resizePlate(P, W_P, L_P, bs);
 
     # Find the edge boundaries
-    contours, _ = cv2.findContours(P_resized, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(P, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     Pedge = contours[0]
 
     # Display the image with the edge boundaries
-    plt.imshow(P_resized, cmap='gray')
+    plt.imshow(P, cmap='gray')
     plt.plot(Pedge[:, :, 0], Pedge[:, :, 1], 'r--', linewidth=2)
     plt.show()
 
@@ -569,6 +615,13 @@ if __name__ == "__main__":
     t_y = np.ceil(W_R/2) + 11  # 5
 
     _, _ ,  _, T_roff = toolFootprint(t_y, t_x, L_T, alpha_T)
+    
+    array = np.zeros((109, 119))
+
+    # Set the last column of the first 21 rows to 1
+    array[:21, -1] = 1
+    T_roff = array
+
 
     cv2.imshow("Tool Footprint", T_roff)
     cv2.waitKey(0)
@@ -588,8 +641,14 @@ if __name__ == "__main__":
     plt.imshow(scaled)
     plt.show()
     plt.clf()
-    drawSchematic(P, A, A_0, R_rct, T_roff)
+    drawSchematic(P, A_0, A, R_rct, T_roff)
 
+
+    #TODO: bis her her gings jetzt
+    # Überprüfen der roatatRobot
+    # erstezen durch der opencv funktion zu SciPy
+    # Rotate robot should be something wrong
+    # cause the function safeareaRobot gives back wrong values
 
     # robot orientation in degrees
     alpha_R = -30
@@ -605,6 +664,7 @@ if __name__ == "__main__":
     # Display the image using Matplotlib
     plt.imshow(scaled)
     plt.show()
+    drawSchematic(P, A_0, A, Rfp, Tfp, Rfpb0)
 
 
 
@@ -616,5 +676,31 @@ if __name__ == "__main__":
 
     drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
 
+
+
+    angStep = 45  # angular steps in degrees
+    angPose = np.arange(0, 360, angStep)  # possible angular values
+
+    brakeDistance = 25
+
+    RT_fp = strelUnion(R_rct, T_roff)
+
+    P_shape = P.shape
+    length_angPose = len(angPose)
+
+    I_20 = np.zeros(P_shape + (length_angPose,), dtype=bool)
+    I_2 = np.zeros(P_shape + (length_angPose,), dtype=bool)
+
+    for k in range(len(angPose)):
+        RTfp, Tfp, RTfpb0 = rotateRobotTool(R_rct, T_roff, angPose[k], brakeDistance)
+        I_20[:, :, k] = binary_erosion(P, structure=RTfp)
+        I_2[:, :, k] = binary_dilation(I_20[:, :, k], structure=Tfp)
+
+    I = np.any(I_2, axis=2)
+    plt.imshow(I_2)
+    plt.show()  
+    plt.imshow(I)
+    #plt.plot(Pedge[1], Pedge[0], 'r--', linewidth=2)
+    plt.plot(Pedge[:, :, 0], Pedge[:, :, 1], 'r--', linewidth=2)
     plt.show()
-    print("Done")
+    print("done")
