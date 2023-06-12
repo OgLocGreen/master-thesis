@@ -411,12 +411,13 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     robot , _ = cv2.findContours(Rfp.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     robot = robot[0]
     rc = np.mean(robot, axis=0)
-    x = rc[0][0]
-    y = rc[0][1]
-    rc[0][0] = y 
-    rc[0][1] = x
-    #TODO: here the variable is not completly right
-    # there is still an offset 
+
+    # x coloms
+    # y rows
+    # functions return x,y "normaly"
+    # matlab returns row, col so y,x
+    # check whats happening in matlab
+    
 
     robot = robot - rc
 
@@ -449,6 +450,7 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     # Matlab 277x2 
     # Python 4,1,2
     # thats because in matlab its each point and in matlab just the edges
+    # swapping x and y cordinates maybe after the contours
 
     #TODO: check if 
 
@@ -478,8 +480,8 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     plt.plot(x,y, 'k-.')
 
     for k in range(0, extrema.shape[0]):
-        x = robot[:, 0, 1]+ extrema[k, 1]
-        y = robot[:, 0, 0]+ extrema[k, 0]
+        x = robot[:, 0, 0]+ extrema[k, 1]
+        y = robot[:, 0, 1]+ extrema[k, 0]
         x = np.append(x, x[0])
         y = np.append(y, y[0])
         plt.plot(x,y, 'g')
@@ -495,8 +497,20 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
         rcb = np.array(Rbfp.shape) / 2
         for k in range(extrema.shape[0]):
             for l in range(len(robotb)):
+
                 shape = robotb[l] - rcb
+                print("shape.shape", shape.shape)
+                print("extrema.shape", extrema.shape)
+
                 plt.plot(shape[1] + extrema[k, 1], shape[0] + extrema[k, 0], 'g--')
+                if len(shape) == 1:
+                    print("1")
+                else:
+                    print("2")
+                    #plt.plot(shape[:,1]+ extrema[k, 1], shape[:,0]+ extrema[k, 0], 'g--')
+                    #plt.plot(shape[0][1] + extrema[k, 1], shape[0][0] + extrema[k, 0], 'g--')
+
+                #TODO: Hier einbauen das es auch bei anderen shapes geht
 
     plt.legend(["plate", "Robot safe area", "Inspected area", "robot", "tool/Sensor"])
     plt.show()
@@ -558,6 +572,12 @@ def paddedErosion(A, SE):
     A_padded = np.pad(A, ((m, m), (n, n)), mode='constant', constant_values=0)
     I = binary_erosion(A_padded.astype(np.uint8), SE.astype(np.uint8))
     I = I[m:-m, n:-n]
+
+    # We make it the imamge bigger with 0 padding arround
+    # then errosion 
+    # then we cut the padding again
+    # TODO: Check if this is correct
+
     return I
 
 
@@ -619,7 +639,7 @@ if __name__ == "__main__":
 
 
     # Define robot size
-    L_R = 75  # 1 pixel = 1 cm
+    L_R = 75   #1 pixel = 1 cm
     W_R = 65
 
     # Define robot footprint
@@ -702,35 +722,61 @@ if __name__ == "__main__":
     drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
 
 
-
     angStep = 45  # angular steps in degrees
     angPose = np.arange(0, 360, angStep)  # possible angular values
 
-    brakeDistance = 25
-
+    brakeDistance = 20
+    robotPose = -30
     RT_fp = strelUnion(R_rct, T_roff)
-    
-    P_shape = P.shape
+    plt.imshow(RT_fp, cmap='gray')
+    plt.axis('on')
+    plt.title('Union of the robot and tool footprints')
+    plt.show()
+
+    RTfp, Tfp, RTb0fp = rotateRobotTool(RT_fp, T_roff, robotPose, brakeDistance)
+    A, A_0 = safeAreaRobot(P, RTfp, Tfp)
+    drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
+
+
+
+    size_P = np.array(P.shape)
     length_angPose = len(angPose)
 
-    I_20 = np.zeros(P_shape + (length_angPose,), dtype=np.uint8)
-    I_2 = np.zeros(P_shape + (length_angPose,), dtype=np.uint8)
+    I_2 = np.zeros(np.concatenate((size_P, [length_angPose])), dtype=np.uint8)
+    I_20 = np.zeros(np.concatenate((size_P, [length_angPose])), dtype=np.uint8)
 
     for k in range(len(angPose)):
         RTfp, Tfp, RTfpb0 = rotateRobotTool(R_rct, T_roff, angPose[k], brakeDistance)
-        """
-        I = RTfp.astype(np.uint8)*255
-        plt.imshow(I)
-        plt.show()
-        I = T_roff.astype(np.uint8)*255
-        plt.imshow(I)
-        plt.show()
-        """
-        I_20[:, :, k] = paddedErosion(P, RTfp)
-        I_2[:, :, k] = binary_dilation(I_20[:, :, k], structure=Tfp)
+        A, A_0 = safeAreaRobot(P, RTfp, Tfp)
+        I_2[:, :, k] = A
+        I_20[:, :, k] = A_0
+
+        #I_20[:, :, k] = paddedErosion(P, RTfp)
+        #I_2[:, :, k] = binary_dilation(I_20[:, :, k], structure=Tfp)
+
+    I_any = np.any(I_2, axis=2)
+    plt.imshow(I_any)
+    plt.show()
+    
+    I_sum = np.sum(I_2, axis=2)
+    plt.imshow(I_sum)
+    plt.show()
+
+    #TODO: hier müsste was am Rand abgeschnitten sein ist es aber leider nicht
+
+    # Getting the shape of the input array
+    rows, cols, depth = I_2.shape
+
+    # Creating the resulting array of shape (501, 501)
+    I_np_logical_or = np.zeros((rows, cols), dtype=bool)
+    I_np_bitwise_or = np.zeros((rows, cols), dtype=bool)
+
+    # Calculating logical OR along the third dimension using a for loop
+    for i in range(depth):
+        I_np_logical_or = np.logical_or(I_np_logical_or, I_2[:, :, i])
+        I_np_bitwise_or = np.bitwise_or(I_np_bitwise_or, I_2[:, :, i])
 
     I = np.any(I_2, axis=2)
-    #TODO: hier müsste was am Rand abgeschnitten sein ist es aber leider nicht
     I = I.astype(np.uint8)*255
     plt.imshow(I)
     data = Pedge
@@ -742,8 +788,19 @@ if __name__ == "__main__":
     plt.show()
 
 
-    NI = P & (~I)
+    NI = P & (~I_np_bitwise_or)
     plt.imshow(NI)
     plt.plot(x, y, 'r--', linewidth=2)
     plt.show()
+
+
+    zoneNum = 2
+    objZone = AnalysisRegion(zonesName, zoneNum)
+
+    indexSequence, sectionSequence, nonInspectZones = solveSetCovering(objZone, I_2, 0)
+
+    plt.imshow(sectionSequence)
+    plt.show()
+
+
     print("done")
