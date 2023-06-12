@@ -101,7 +101,8 @@ def toolFootprint(t_y, t_x, L_T, alpha_T):
     # i mean there are just zeros
     # this is t_roff_2
 
-
+    #TODO: in matlab its directly on the corner here its in the middle
+    # i think it doesnt bother because the rest are zeros
 
     plt.subplot(1,4,1)
     plt.imshow(T_off,  cmap='gray')
@@ -203,69 +204,7 @@ def rotateRobot(R_rct, T_roff, robotPose, brakeDistance=0):
     #        confinement region, rotated the same amount as the robot.
     # Rfpb0 -> robot footprint rotated, but without considering the braking
     #          distance
-    """
-    if brakeDistance is None:
-        brakeDistance = 0
-
-    # Calculate RFpb0
-    center = (R_rct.shape[1]/ 2, R_rct.shape[0]/ 2) 
-    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
-    # Calculate the new image size
-    cos_theta = np.abs(rotation_matrix[0, 0])
-    sin_theta = np.abs(rotation_matrix[0, 1])
-    new_width = int((R_rct.shape[1] * cos_theta) + (R_rct.shape[0] * sin_theta))
-    new_height = int((R_rct.shape[1] * sin_theta) + (R_rct.shape[0] * cos_theta))
-    # Adjust the translation component of the matrix to center the rotated image
-    rotation_matrix[0, 2] += (new_width / 2) - center[0]
-    rotation_matrix[1, 2] += (new_height / 2) - center[1]
-    # Rotate the robot footprint in X direction by the specified robotPose angle
-    Rfpb0 = cv2.warpAffine(R_rct.astype(np.uint8), rotation_matrix, (new_width, new_height))
-
-    # Calculate Rfp
-    # first dilate
-    # then rotate
-    # FIXME: This could be wrong because it can not dilate more because of the Picture size
-    # Dilate the robot footprint in X direction by the specified breakDistance
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2 * brakeDistance + 1, 1))
-    Rfp = cv2.dilate(R_rct.astype(np.uint8), kernel)
-
-    # Rotate the resulting footprint
-    center = (Rfp.shape[1]/ 2, Rfp.shape[0]/ 2) 
-    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
-
-    # Calculate the new image size
-    cos_theta = np.abs(rotation_matrix[0, 0])
-    sin_theta = np.abs(rotation_matrix[0, 1])
-    new_width = int((Rfp.shape[1] * cos_theta) + (Rfp.shape[0] * sin_theta))
-    new_height = int((Rfp.shape[1] * sin_theta) + (Rfp.shape[0] * cos_theta))
-
-    # Adjust the translation component of the matrix to center the rotated image
-    rotation_matrix[0, 2] += (new_width / 2) - center[0]
-    rotation_matrix[1, 2] += (new_height / 2) - center[1]
-
-    # Rotate the robot footprint in X direction by the specified robotPose angle
-    Rfp = cv2.warpAffine(Rfp.astype(np.uint8), rotation_matrix, (new_width, new_height))
-
-    # Calculate Tfp
-    # Rotate the resulting footprint
-    center = (T_roff.shape[1]/ 2, T_roff.shape[0]/ 2) 
-    rotation_matrix=  cv2.getRotationMatrix2D(center, robotPose, 1.0)
-
-    # Calculate the new image size
-    cos_theta = np.abs(rotation_matrix[0, 0])
-    sin_theta = np.abs(rotation_matrix[0, 1])
-    new_width = int((T_roff.shape[1] * cos_theta) + (T_roff.shape[0] * sin_theta))
-    new_height = int((T_roff.shape[1] * sin_theta) + (T_roff.shape[0] * cos_theta))
-
-    # Adjust the translation component of the matrix to center the rotated image
-    rotation_matrix[0, 2] += (new_width / 2) - center[0]
-    rotation_matrix[1, 2] += (new_height / 2) - center[1]
-
-    # Rotate the tool/sensor footprint
-    Tfp = cv2.warpAffine(T_roff.astype(np.uint8), rotation_matrix, (T_roff.shape[1], T_roff.shape[0]))
-
-    """
-
+   
     if brakeDistance is None:
         brakeDistance = 0
 
@@ -436,23 +375,6 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
     rt, ct = np.where(Tfp)
     rt = rt - int(Tfp.shape[0] / 2)
     ct = ct - int(Tfp.shape[1] / 2)
-    #plate okay
-    #A_0edge okay
-    #A_edge okay
-    # extrams okay
-
-    # rt okay
-    # ct okay
-
-
-
-    # FIXME: Robot var looks not like in Matlab
-    # Matlab 277x2 
-    # Python 4,1,2
-    # thats because in matlab its each point and in matlab just the edges
-    # swapping x and y cordinates maybe after the contours
-
-    #TODO: check if 
 
     data = plate
     x = data[:, 0, 0]
@@ -463,7 +385,7 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
 
     plt.gca().invert_yaxis()
     plt.axis('equal')
-    # Plate is okay starts in matlab 101,101 and in python 100,100 also its both times (501,901)
+
 
     data = A_0edge
     x = data[:, 0, 0]
@@ -497,20 +419,9 @@ def drawSchematic(P, A_0, A, Rfp, Tfp, Rbfp=None):
         rcb = np.array(Rbfp.shape) / 2
         for k in range(extrema.shape[0]):
             for l in range(len(robotb)):
-
                 shape = robotb[l] - rcb
-                print("shape.shape", shape.shape)
-                print("extrema.shape", extrema.shape)
-
                 plt.plot(shape[1] + extrema[k, 1], shape[0] + extrema[k, 0], 'g--')
-                if len(shape) == 1:
-                    print("1")
-                else:
-                    print("2")
-                    #plt.plot(shape[:,1]+ extrema[k, 1], shape[:,0]+ extrema[k, 0], 'g--')
-                    #plt.plot(shape[0][1] + extrema[k, 1], shape[0][0] + extrema[k, 0], 'g--')
 
-                #TODO: Hier einbauen das es auch bei anderen shapes geht
 
     plt.legend(["plate", "Robot safe area", "Inspected area", "robot", "tool/Sensor"])
     plt.show()
@@ -572,11 +483,6 @@ def paddedErosion(A, SE):
     A_padded = np.pad(A, ((m, m), (n, n)), mode='constant', constant_values=0)
     I = binary_erosion(A_padded.astype(np.uint8), SE.astype(np.uint8))
     I = I[m:-m, n:-n]
-
-    # We make it the imamge bigger with 0 padding arround
-    # then errosion 
-    # then we cut the padding again
-    # TODO: Check if this is correct
 
     return I
 
@@ -659,18 +565,19 @@ if __name__ == "__main__":
     t_x = np.ceil(L_R/2) + 21  # 11
     t_y = np.ceil(W_R/2) + 11  # 5
 
-    _, _ ,  _, T_roff = toolFootprint(t_y, t_x, L_T, alpha_T)
+    T_roff , T_roff_1 ,  T_roff_2 , T_roff_3 = toolFootprint(t_y, t_x, L_T, alpha_T)
     
-    array = np.zeros((109, 119))
-
     # Set the last column of the first 21 rows to 1
+    #TODO: make this automaticly
+    array = np.zeros((109, 119))
     array[:21, -1] = 1
-    T_roff = array
+    T_roff = T_roff_2
 
+    plt.imshow(T_roff, cmap='gray')
+    plt.axis('on')
+    plt.title('Tool footprint')
+    plt.show()
 
-    cv2.imshow("Tool Footprint", T_roff)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 
     # Call the safeAreaRobot function
@@ -685,15 +592,8 @@ if __name__ == "__main__":
     # Display the image using Matplotlib
     plt.imshow(scaled)
     plt.show()
-    plt.clf()
+
     drawSchematic(P, A_0, A, R_rct, T_roff)
-
-
-    #TODO: bis her her gings jetzt
-    # Überprüfen der roatatRobot
-    # erstezen durch der opencv funktion zu SciPy
-    # Rotate robot should be something wrong
-    # cause the function safeareaRobot gives back wrong values
 
     # robot orientation in degrees
     alpha_R = -30
@@ -728,6 +628,7 @@ if __name__ == "__main__":
     brakeDistance = 20
     robotPose = -30
     RT_fp = strelUnion(R_rct, T_roff)
+
     plt.imshow(RT_fp, cmap='gray')
     plt.axis('on')
     plt.title('Union of the robot and tool footprints')
@@ -751,9 +652,6 @@ if __name__ == "__main__":
         I_2[:, :, k] = A
         I_20[:, :, k] = A_0
 
-        #I_20[:, :, k] = paddedErosion(P, RTfp)
-        #I_2[:, :, k] = binary_dilation(I_20[:, :, k], structure=Tfp)
-
     I_any = np.any(I_2, axis=2)
     plt.imshow(I_any)
     plt.show()
@@ -761,20 +659,6 @@ if __name__ == "__main__":
     I_sum = np.sum(I_2, axis=2)
     plt.imshow(I_sum)
     plt.show()
-
-    #TODO: hier müsste was am Rand abgeschnitten sein ist es aber leider nicht
-
-    # Getting the shape of the input array
-    rows, cols, depth = I_2.shape
-
-    # Creating the resulting array of shape (501, 501)
-    I_np_logical_or = np.zeros((rows, cols), dtype=bool)
-    I_np_bitwise_or = np.zeros((rows, cols), dtype=bool)
-
-    # Calculating logical OR along the third dimension using a for loop
-    for i in range(depth):
-        I_np_logical_or = np.logical_or(I_np_logical_or, I_2[:, :, i])
-        I_np_bitwise_or = np.bitwise_or(I_np_bitwise_or, I_2[:, :, i])
 
     I = np.any(I_2, axis=2)
     I = I.astype(np.uint8)*255
@@ -788,9 +672,25 @@ if __name__ == "__main__":
     plt.show()
 
 
-    NI = P & (~I_np_bitwise_or)
+    NI = P & (~I)
     plt.imshow(NI)
     plt.plot(x, y, 'r--', linewidth=2)
+    plt.show()
+
+    zoneNum = 0
+    objZone = AnalysisRegion(zonesName, zoneNum)
+
+    indexSequence, sectionSequence, nonInspectZones = solveSetCovering(objZone, I_2, 0)
+
+    plt.imshow(sectionSequence)
+    plt.show()
+
+    zoneNum = 1
+    objZone = AnalysisRegion(zonesName, zoneNum)
+
+    indexSequence, sectionSequence, nonInspectZones = solveSetCovering(objZone, I_2, 0)
+
+    plt.imshow(sectionSequence)
     plt.show()
 
 
@@ -801,6 +701,10 @@ if __name__ == "__main__":
 
     plt.imshow(sectionSequence)
     plt.show()
+
+
+
+
 
 
     print("done")
