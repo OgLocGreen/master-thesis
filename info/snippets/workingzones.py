@@ -104,6 +104,7 @@ def toolFootprint(t_y, t_x, L_T, alpha_T):
     #TODO: in matlab its directly on the corner here its in the middle
     # i think it doesnt bother because the rest are zeros
 
+    """
     plt.subplot(1,4,1)
     plt.imshow(T_off,  cmap='gray')
     plt.title('T_off')
@@ -125,6 +126,7 @@ def toolFootprint(t_y, t_x, L_T, alpha_T):
 
     # Show the figure
     plt.show()
+    """
 
     return T_off, T_roff_1, T_roff_2, T_roff_3
 
@@ -276,17 +278,22 @@ def rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance):
     return RTfp, Tfp, RTfpb0
 
 
-def solveSetCovering(pendingZone, accessibility, minflag=True):
+def solveSetCovering(pendingZone, accessibility, minflag = True):
     # Solve the set covering problem based on a pending zone and accessibility information.
 
     if minflag is None:
         minflag = True
 
     # Compute nonInspectZones: the set of points in the object zone that cannot be accessed with any robot orientation.
+
     nonInspectZones = pendingZone & (~np.any(accessibility, axis=2))
+
+
 
     # Compute the zone that will be inspected.
     pendingZone = pendingZone & (~nonInspectZones)
+
+
 
     # Compute the area that has not been covered yet.
     pendingArea = np.sum(pendingZone)
@@ -303,8 +310,23 @@ def solveSetCovering(pendingZone, accessibility, minflag=True):
 
     # While there are points to be inspected
     while (pendingArea > 0):
+        """
+        plt.imshow(pendingZone.astype(np.uint8)*255)
+        plt.title("pendingZone")
+        plt.axis('on')
+        plt.show()
+        """
+
         # Compute how many poses allow reaching each point in the remaining area
         numPoses = np.sum(accessibility, axis=2)
+        """
+        plt.imshow(numPoses, cmap='RdYlBu_r')
+        plt.colorbar()  # Add a colorbar for reference
+        plt.show()
+        """
+
+        #TODO: This NumPoses works but not perfektly
+        # i think its kind of fine
 
         if minflag:
             # Find the minimum value bigger than zero
@@ -317,8 +339,9 @@ def solveSetCovering(pendingZone, accessibility, minflag=True):
 
         # For each orientation that allows covering at least a point in the mask,
         # compute the area that can be inspected
-        areabypose = np.sum(accessibility, axis=(0, 1))
-        validposes = np.any(accessibility & mask[:,:,np.newaxis], axis=(0, 1))
+        areabypose = np.squeeze(np.sum(accessibility, axis=(0, 1)))
+        # TODO: Areabypose is not the same values but the are the same orden
+        validposes = np.squeeze(np.any(accessibility & accessibility & mask[:,:,np.newaxis], axis=(0, 1)))
         c = areabypose * validposes
 
         # Find the maximum valid area and its position
@@ -330,6 +353,8 @@ def solveSetCovering(pendingZone, accessibility, minflag=True):
         k += 1
         inspectSequence += k * np.uint8(accessibility[:,:,nextPose])
         accessibility = accessibility & (~accessibility[:,:,nextPose][:,:,np.newaxis])
+
+
 
     return indexSequence, inspectSequence, nonInspectZones
 
@@ -538,11 +563,6 @@ if __name__ == "__main__":
     contours, _ = cv2.findContours(P, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     Pedge = contours[0]
 
-    # Display the image with the edge boundaries
-    plt.imshow(P, cmap='gray')
-    plt.plot(Pedge[:, :, 0], Pedge[:, :, 1], 'r--', linewidth=2)
-    plt.show()
-
 
     # Define robot size
     L_R = 75   #1 pixel = 1 cm
@@ -551,10 +571,6 @@ if __name__ == "__main__":
     # Define robot footprint
     R_rct = np.ones((W_R, L_R), dtype=bool)
 
-    # Display the robot footprint
-    plt.imshow(R_rct, cmap='gray')
-    plt.axis('on')
-    plt.show()
 
 
 
@@ -573,10 +589,6 @@ if __name__ == "__main__":
     array[:21, -1] = 1
     T_roff = T_roff_2
 
-    plt.imshow(T_roff, cmap='gray')
-    plt.axis('on')
-    plt.title('Tool footprint')
-    plt.show()
 
 
 
@@ -592,8 +604,7 @@ if __name__ == "__main__":
     # Display the image using Matplotlib
     plt.imshow(scaled)
     plt.show()
-
-    drawSchematic(P, A_0, A, R_rct, T_roff)
+    #drawSchematic(P, A_0, A, R_rct, T_roff)
 
     # robot orientation in degrees
     alpha_R = -30
@@ -609,7 +620,7 @@ if __name__ == "__main__":
     # Display the image using Matplotlib
     plt.imshow(scaled)
     plt.show()
-    drawSchematic(P, A_0, A, Rfp, Tfp, Rfpb0)
+    #drawSchematic(P, A_0, A, Rfp, Tfp, Rfpb0)
 
 
 
@@ -618,8 +629,7 @@ if __name__ == "__main__":
 
     RTfp, Tfp, RTb0fp = rotateRobotTool(R_rct, T_roff, robotPose, brakeDistance)
     A, A_0 = safeAreaRobot(P, RTfp, Tfp)
-
-    drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
+    #drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
 
 
     angStep = 45  # angular steps in degrees
@@ -629,14 +639,10 @@ if __name__ == "__main__":
     robotPose = -30
     RT_fp = strelUnion(R_rct, T_roff)
 
-    plt.imshow(RT_fp, cmap='gray')
-    plt.axis('on')
-    plt.title('Union of the robot and tool footprints')
-    plt.show()
 
     RTfp, Tfp, RTb0fp = rotateRobotTool(RT_fp, T_roff, robotPose, brakeDistance)
     A, A_0 = safeAreaRobot(P, RTfp, Tfp)
-    drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
+    #drawSchematic(P, A_0, A, RTfp, Tfp, RTb0fp)
 
 
 
@@ -652,14 +658,8 @@ if __name__ == "__main__":
         I_2[:, :, k] = A
         I_20[:, :, k] = A_0
 
-    I_any = np.any(I_2, axis=2)
-    plt.imshow(I_any)
-    plt.show()
-    
-    I_sum = np.sum(I_2, axis=2)
-    plt.imshow(I_sum)
-    plt.show()
 
+    """"
     I = np.any(I_2, axis=2)
     I = I.astype(np.uint8)*255
     plt.imshow(I)
@@ -676,8 +676,9 @@ if __name__ == "__main__":
     plt.imshow(NI)
     plt.plot(x, y, 'r--', linewidth=2)
     plt.show()
+    """
 
-    zoneNum = 0
+    zoneNum = 3
     objZone = AnalysisRegion(zonesName, zoneNum)
 
     indexSequence, sectionSequence, nonInspectZones = solveSetCovering(objZone, I_2, 0)
