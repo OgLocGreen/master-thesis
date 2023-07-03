@@ -3,10 +3,10 @@ import numpy as np
 import seidel as sd
 import matplotlib.pyplot as plt
 from scipy.ndimage import rotate
-from scipy.ndimage.morphology import binary_dilation
+#from scipy.ndimage.morphology import binary_dilation
 from scipy.ndimage import binary_erosion
 
-from info.snippets.matlab_algoritm_func_2_flascher import make_working_zones
+#from info.snippets.matlab_algoritm_func_2_flascher import make_working_zones
 
 
 def get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image):
@@ -141,6 +141,7 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
     hull_group = []
     images_cropped_polygones = []
     images_iterations = []
+    image_zeros = np.zeros_like(image)
     if working_zones is None:
         # Get the contours and grouped contours in the cropped image
         grouped_contours, img_contour = get_grouped_contours(image=image,threshold_detail_polygone=threshold_detail_polygone, min_area=min_area)
@@ -164,9 +165,11 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             if i == 0:
                 # Crop the image to the current working zone
                 img_cropped, image_deleted = get_rectangle(image, z[0], z[1],acceleration_offset)
+                img_cropped = make_complete(image_zeros, z[0], z[1], img_cropped)
             else:
                 # Crop the image to the current working zone
                 img_cropped, image_deleted = get_rectangle(image_deleted, z[0], z[1], acceleration_offset)
+                img_cropped = make_complete(image_zeros, z[0], z[1], img_cropped)
 
             images_iterations.append(image_deleted)
 
@@ -228,6 +231,30 @@ def get_hulls(image, working_zones=None, min_area=600, threshold_detail_polygone
             images_cropped_polygones.append(image_black_cropped)
 
         return hull_group, image, images_cropped_polygones, images_iterations
+
+def make_complete(image,point1,point2, cropped_image, acceleration_offset=0, direction = 0):
+    h, w = image.shape[:2] # Get height and width of the image
+    cx, cy = w // 2, h // 2 # Calculate center coordinates
+
+    # Calculate actual coordinates of the corner points based on center coordinates
+    x1, y1 = cx + point1[0], cy + point1[1]
+    x2, y2 = cx + point2[0], cy + point2[1]
+    # Ensure the points are sorted in ascending order and add the acceleration offset so the cropped working area is smaller
+    if direction == 0 or direction == 1:
+        x_start = min(x1, x2) + acceleration_offset
+        x_end = max(x1, x2) -  acceleration_offset
+        y_start = min(y1, y2)
+        y_end = max(y1, y2)
+    else:
+        x_start = min(x1, x2)
+        x_end = max(x1, x2)
+        y_start = min(y1, y2) + acceleration_offset
+        y_end = max(y1, y2) - acceleration_offset
+
+    # Crop the image to the rectangle defined by the points
+    image[y_start:y_end, x_start:x_end] = cropped_image
+    return image
+    
 
 def get_rectangle(image, point1, point2,acceleration_offset=0, direction = 0):
     """
@@ -613,13 +640,16 @@ def make_working_zones_old(\
 if __name__ == '__main__':
 
     # Load the image
-    image = cv2.imread('panorama.png')
-
+    image = cv2.imread('../info/snippets/panorama.png')
+    #image = cv2.flip(image, 0)
     # Check if the image was loaded successfully
     if image is None:
         print("Error: Failed to load the image.")
         exit()
     threshold_detail_polygone = 0.005
+
+    # shape orignal pic (591, 1654)
+    # shape pic(535, 1554)
 
     # Get the contours and a black Image with the contours drawn on it
     grouped_contours, image_contours = get_grouped_contours(image,  threshold_detail_polygone, min_area=600,)
@@ -635,9 +665,29 @@ if __name__ == '__main__':
 
     # Extract the finished hull
     grouped_polynones_finished, image_finished_polynome = extract_finished_polynomes(image_hulls_corner)
+    
+    text_color = (0, 255, 255)
+    for polyngom in grouped_polynones_finished:
+        for points in polyngom:
+            for label, (x,y) in enumerate(points):
+                cv2.putText(image_finished_polynome, str(str(x) +"," + str(y)), (x, y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, text_color, 2, cv2.LINE_AA)
+    #image_finished_polynome_fliped = cv2.flip(image_finished_polynome, 0)
+    #cv2.imshow('image_finished_polynome_fliped', image_finished_polynome_fliped)
+    cv2.imshow('image_finished_polynome', image_finished_polynome)
+    cv2.waitKey(0)  
+
+
+    poly = []
+    for i, polygone in enumerate(grouped_polynones_finished):
+        zone = []
+        for k, point in enumerate(polygone):
+            for one_point in point:
+                test = polygone
+                zone.append([one_point[0], one_point[1]])
+        poly.append(zone)
 
     # Claculate the working zones like in the paper
-    z0, z90, z180, z270 = make_working_zones(image=image_finished_polynome)
+    z0, z90, z180, z270 = make_working_zones_old(image=image_finished_polynome)
     working_zones = [z0, z90, z180, z270]
 
     #For now its a mock up
@@ -680,9 +730,14 @@ if __name__ == '__main__':
     image_dilate_zones, grouped_polygones_dilate_zones, img_dilate_polygone_zones = \
     dilate_polygons(img_list_zones,kernel , threshold_detail_polygone=threshold_detail_polygone)
 
+    test = np.array(grouped_polygones_dilate_zones[0])
+    np.save("pts.npy", test)
+
+
     # make the trapezoids of each polygone in each working zone
     polygones_zones = get_trapezoids(grouped_polygones_dilate_zones, img_dilate_polygone_zones, image)
 
+    image_test = image.copy()
     # show the trapezoids
     for polygone_groups, image_cropped_polygones in zip(polygones_zones,img_list_zones):
         image5 = np.zeros_like(image_cropped_polygones)
@@ -692,10 +747,11 @@ if __name__ == '__main__':
                 # Reshape the array to have shape (1, n, 2)
                 pts = np.array([trap], np.int32)
                 pts = pts.reshape((-1, 1, 2))
-                cv2.polylines(image5, [pts], True, (0, 0, 255), thickness=2)
-        #cv2.imshow("image5", image5)
-        #cv2.waitKey(0)
-        #cv2.destroyAllWindows()
+
+                cv2.polylines(image_test, [pts], True, (0, 0, 255), thickness=2)
+        cv2.imshow("image5", image_test)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     
     ### Open Points
