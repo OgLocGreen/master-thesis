@@ -1,2 +1,0 @@
-1. when we use dilation for example in rotate robot tool 227 we do it in x and y or just one dirrection?
-2. Problem is that matlab gets a other 
