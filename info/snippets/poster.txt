@@ -1,0 +1,26 @@
+
+To mount the camera on the robot, a combination of different components was developed. These components include the mechanical components linear system, rotary system, mounting plate. 
+In order to accurately position the camera for optimal viewing and measurement, the shown mechanism was developed. This camera subsystem is also used to move the camera out of the hazard Area. Because in this area it can come to sparking from the repair tool. 
+
+The camera mechanism comprises four systems. The Linear System, a pre-configured, plug-and-play solution, includes a driver, motor, and position sensor. The Tilt System, composed of selected components, also includes a driver, motor, and sensor. The Power Supply System, shown in blue, powers all systems using a battery and voltage converters. Finally, the Control Unit, illustrated in red, is a Raspberry Pi-based controller that manages motor functions and camera positioning via the main computer program.
+
+
+The electronic components that comprise the camera mechanism are comprised of four distinct systems. The first of these is the Linear System, which consists of a pre-fabricated combination of a driver, motor, and position sensor. The Linear System is a plug-and-play solution that requires no further configuration.
+The second system is the Tilt System, which is made up of self-selected components that have been appropriately sized to meet the needs of the mechanism. The Tilt System consists of a driver, motor, and position sensor.
+The electronic components that comprise the camera mechanism are comprised of four distinct systems. The first of these is the Linear System, which consists of a pre-fabricated combination of a driver, motor, and position sensor. The Linear System is a plug-and-play solution that requires no further configuration.
+The second system is the Tilt System, which is made up of self-selected components that have been appropriately sized to meet the needs of the mechanism. The Tilt System consists of a driver, motor, and position sensor.
+The third system is the Power Supply System, which provides power to the other systems and consists of a battery and voltage converters. The Power Supply System is represented in blue.
+Finally, the Control Unit is the fourth system and is responsible for controlling the motors. This unit, which is represented in red, is a Raspberry Pi-based camera system controller that can be manipulated by the main program on the primary computer to position the camera. The Controll System is represented in red.
+
+
+
+
+For precise scanning of the zones, the software used must meet certain criteria. A primary requirement is to reliably detect the zones marked on the plate. It should be noted that the zones are not always represented as perfectly closed circles, as they are merely sprayed on quickly by an employee. The algorithm must therefore be robust and intelligent enough to identify all zone-like markings. 
+
+A significant limitation arises for safety reasons: Under no circumstances should the robot leave the plate. Due to a slight height offset of the plate, the robot could become unbalanced when crossing this threshold. Due to its weight and design, this could cause damage to both material and persons. This must be avoided at all costs. This safety requirement complicates path planning and means that the plate cannot be scanned completely from a single position of the robot. The Plate limits acts as a physical barrier as other maschines are enclosed in a cage.
+
+Another requirement is that the zone is scanned at a constant speed. This means that the robot needs a certain time or distance to reach the zone, and this time (or distance) is needed during both acceleration and deceleration.
+
+Despite these two constraints, the robot can be positioned using different orientations to achieve a high degree of coverage. This increases the scan coverage of the plate. 
+
+The last crucial step in this process is the creation of an efficient path that allows the robot to scan each of the previously identified zones. This aspect is crucial because a well-planned path not only increases the efficiency of scanning, but also satisfies safety requirements. 
